@@ -1,4 +1,4 @@
-# Picklechecker 🔍
+# PickleChecker 🔍
 
 A security analysis tool for scanning Python pickle files and ML models for potential security threats. It integrates multiple scanning engines to detect malicious code, unsafe imports, and suspicious patterns in pickle files and model weights.
 
