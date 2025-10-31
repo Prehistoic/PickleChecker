@@ -2,7 +2,7 @@
 
 A security analysis tool for scanning Python pickle files and ML models for potential security threats. It integrates multiple scanning engines to detect malicious code, unsafe imports, and suspicious patterns in pickle files and model weights.
 
-## Features
+## Features ✨
 
 - 🔍 Multi-engine scanning
 - 📁 Support for directory, file, and HuggingFace model scanning  
@@ -13,7 +13,7 @@ A security analysis tool for scanning Python pickle files and ML models for pote
 - [Picklescan](https://github.com/mmaitre314/picklescan)
 - [Modelscan](https://github.com/protectai/modelscan)
 
-## Installation
+## Installation 🖥️
 
 ```bash
 # Clone the repository
@@ -27,7 +27,7 @@ pip install -r requirements.txt
 > [!IMPORTANT]
 > Make sure to copy `.env.template` to `.env` and update `HF_TOKEN` with an Access Token generated from [HuggingFace](https://huggingface.co/settings/tokens)
 
-## Usage
+## Usage 🚀
 
 ```bash
 # Scan a single file
@@ -43,7 +43,7 @@ python picklechecker.py --model "organization/model-name"
 python picklechecker.py -v --file path/to/pickle.pkl
 ```
 
-## Contributing
+## Contributing 🚧
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
