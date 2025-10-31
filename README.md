@@ -24,6 +24,9 @@ cd picklechecker
 pip install -r requirements.txt
 ```
 
+> [!IMPORTANT]
+> Make sure to copy `.env.template` to `.env` and update `HF_TOKEN` with an Access Token generated from [HuggingFace](https://huggingface.co/settings/tokens)
+
 ## Usage
 
 ```bash
