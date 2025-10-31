@@ -108,9 +108,6 @@ class FicklingScanner(Scanner):
             "unsafe_imports_ml": analysis_results.get('UnsafeImportsML', 'None'),
             "issues": issues_str
         }
-        
-        # Log final status (using the actual status name for clarity)
-        self.logger.info(f"Fickling scan for {target_path.name} finished with status: {status.name}")
 
         return ScanResult(
             scanner=self.name,
