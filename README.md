@@ -17,7 +17,7 @@ A security analysis tool for scanning Python pickle files and ML models for pote
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/picklechecker.git
+git clone https://github.com/Prehistoic/PickleChecker.git
 cd picklechecker
 
 # Install dependencies
