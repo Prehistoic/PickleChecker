@@ -4,6 +4,7 @@ from pathlib import Path
 
 from utils.logging_helper import get_logger
 from utils.console_helper import ConsoleHelper
+from utils.pickle_helper import PickleAnalyzer
 from scanners import Scanner
 
 class ScannersHelper:
@@ -21,9 +22,13 @@ class ScannersHelper:
         if not target_path.is_dir():
             self.logger.error(f"Directory not found at {dirpath}")
             return
-        
-        all_results = []
 
+        # First we analyze all pickle files in directory
+        pickle_analyses = PickleAnalyzer.analyze_directory(dirpath)
+
+        # Then we run all scanners
+        scanner_results = []
+        
         # 1. Get all scanner module files (e.g., 'fickling.py', 'picklescan.py')
         # Filter for files that don't start with '_' (like __init__.py) and end with '.py'
         scanner_files = Path("scanners").glob("[!_]*.py") 
@@ -43,8 +48,7 @@ class ScannersHelper:
                         
                         # 5. Instantiate the scanner and run the method
                         scanner_instance = obj(name=module_file.stem)
-                        scanner_results = scanner_instance.run_directory_scan(target_path)
-                        all_results.extend(scanner_results)
+                        scanner_results.extend(scanner_instance.run_directory_scan(target_path))
                         
             except ImportError as e:
                 self.logger.warning(f"Could not import {module_name}: {e}")
@@ -52,7 +56,7 @@ class ScannersHelper:
                 self.logger.error(f"Error while running {module_name}: {e}")
 
         # Finally we display the scan results in the console
-        ConsoleHelper.display_scan_results(all_results)
+        ConsoleHelper.display_results(scanner_results, pickle_analyses)
 
     @classmethod
     def run_file_scan_all_scanners(self, filepath: str):
@@ -66,7 +70,11 @@ class ScannersHelper:
             self.logger.error(f"File not found at {filepath}")
             return
         
-        all_results = []
+        # First we analyze the provided pickle file
+        pickle_analysis = PickleAnalyzer.analyze_pickle(filepath)
+
+        # Then we run all scanners
+        scanner_results = []
 
         # 1. Get all scanner module files (e.g., 'fickling.py', 'picklescan.py')
         # Filter for files that don't start with '_' (like __init__.py) and end with '.py'
@@ -87,8 +95,7 @@ class ScannersHelper:
                         
                         # 5. Instantiate the scanner and run the method
                         scanner_instance = obj()
-                        scanner_result = scanner_instance.run_file_scan(target_path)
-                        all_results.append(scanner_result)
+                        scanner_results.append(scanner_instance.run_file_scan(target_path))
                         
             except ImportError as e:
                 self.logger.warning(f"Could not import {module_name}: {e}")
@@ -96,4 +103,4 @@ class ScannersHelper:
                 self.logger.error(f"Error while running {module_name} scanner: {e}")
 
         # Finally we display the scan results in the console
-        ConsoleHelper.display_scan_results(all_results)
+        ConsoleHelper.display_results(scanner_results, [pickle_analysis])
