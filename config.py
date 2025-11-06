@@ -9,8 +9,8 @@ PROJECT_NAME = "PickleChecker"
 
 # Huggingface config
 HF_TOKEN = os.getenv("HF_TOKEN", None)
-HF_DOWNLOAD_DIR = os.getenv("HF_DOWNLOAD_DIR", "downloads")
-HF_ETAG_TIMEOUT = int(os.getenv("HF_ETAG_TIMEOUT", 86400))
+HF_DOWNLOAD_DIR = "downloads"
+HF_ETAG_TIMEOUT = 86400
 
 # Pickle file analysis safety limits
 MAX_FILES = 200
