@@ -1,9 +1,8 @@
-from huggingface_hub import snapshot_download, hf_hub_download
-import shutil
-import os
+import logging
 
-from utils.logging_helper import get_logger
-from config import HF_TOKEN, HF_DOWNLOAD_DIR, HF_ETAG_TIMEOUT
+from huggingface_hub import snapshot_download, hf_hub_download
+
+from picklechecker.config import HF_TOKEN, HF_ETAG_TIMEOUT
 
 class HuggingfaceClient:
     """
@@ -11,19 +10,19 @@ class HuggingfaceClient:
     Handles authentication, and the downloading of models or individual files.
     """
 
-    logger = get_logger(__name__)
+    logger = logging.getLogger(__name__)
 
-    def __init__(self):
+    def __init__(self, download_dir: str):
         """
         Initializes the client and prepares the local download directory.
         """
-
-        self.token = HF_TOKEN
-        self.download_dir = HF_DOWNLOAD_DIR
+        self.hf_token = HF_TOKEN
         self.etag_timeout = HF_ETAG_TIMEOUT
+        self.download_dir = download_dir
 
-        shutil.rmtree(self.download_dir, ignore_errors=True)
-        os.makedirs(self.download_dir, exist_ok=True)
+        if not self.hf_token:
+            self.logger.error("Required environment variable HF_TOKEN is not set !")
+            raise
 
     def download_repo(self, repo_name: str, allow_patterns: list) -> str:
         """
@@ -43,16 +42,15 @@ class HuggingfaceClient:
         try:
             local_path = snapshot_download(
                 repo_id=repo_name,
-                token=self.token,
+                token=self.hf_token,
                 local_dir=self.download_dir,
                 etag_timeout=self.etag_timeout,
                 allow_patterns=allow_patterns
             )
             self.logger.info(f"Repository {repo_name} successfully downloaded to: {local_path}")
-            return local_path
         except Exception as e:
             self.logger.error(f"Failed to download Huggingface repo {repo_name}: {str(e)}")
-            return None
+            raise
 
     def download_file(self, repo_name: str, filename: str) -> str:
         """
@@ -70,12 +68,11 @@ class HuggingfaceClient:
             file_path = hf_hub_download(
                 repo_id=repo_name,
                 filename=filename,
-                token=self.token,
+                token=self.hf_token,
                 local_dir=self.download_dir,
                 etag_timeout=self.etag_timeout
             )
             self.logger.info(f"File {filename} successfully downloaded to: {file_path}")
-            return file_path
         except Exception as e:
             self.logger.error(f"Failed to download {filename} from Huggingface repo {repo_name}: {str(e)}")
-            return None
+            raise

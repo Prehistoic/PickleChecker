@@ -1,0 +1,5 @@
+"""PickleChecker - A security analysis tool for Python pickle files and ML models."""
+
+__version__ = "1.0.0"
+__author__ = "Prehistoic"
+__license__ = "BSD-3-Clause"
