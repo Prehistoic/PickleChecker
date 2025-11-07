@@ -13,12 +13,12 @@ def setup_logging(level=logging.INFO):
     """
     # 1. Silence all annoying loggers
     logging.getLogger("httpx").setLevel(logging.CRITICAL)
+    logging.getLogger("httpcore").setLevel(logging.CRITICAL)
 
     # 2. Configuring the project root logger
     project_root_logger = logging.getLogger()
     project_root_logger.setLevel(level)
 
-    # Use a StreamHandler to output logs to the console
     handler = logging.StreamHandler(sys.stdout)
     
     formatter = logging.Formatter(
@@ -30,3 +30,7 @@ def setup_logging(level=logging.INFO):
     # Ensure no duplicate handlers if setup_logging is called multiple times
     if not project_root_logger.handlers:
         project_root_logger.addHandler(handler)
+
+def set_global_logging_level(level=logging.INFO):
+    project_root_logger = logging.getLogger()
+    project_root_logger.setLevel(level)

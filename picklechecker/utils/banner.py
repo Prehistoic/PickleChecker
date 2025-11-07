@@ -1,8 +1,4 @@
-def display_banner():
-    """
-    Display a beautiful banner!
-    """
-    # Using a triple-quoted string (multiline string) preserves the ASCII art structure.
+def display_banner() -> None:
     print(
     r"""        
                 ____  _      __   __     ______                __             

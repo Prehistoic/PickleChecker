@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "picklechecker"
 version = "1.0.0"
-description = "Yet Another Pickle Files Scanner"
+description = "A security analysis tool for scanning Python pickle files and ML models for potential security threats "
 readme = "README.md"
 authors = ["Prehistoic <lacotematthieu@gmail.com>"]
 license = "BSD-3-Clause"
@@ -9,16 +9,15 @@ homepage = "https://github.com/Prehistoic/PickleChecker"
 repository = "https://github.com/Prehistoic/PickleChecker"
 keywords = ["security", "pickle", "ml", "scanner"]
 classifiers = [
-    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Topic :: Security",
 ]
 packages = [{ include = "picklechecker" }]
+exclude = ["tests/*", "Makefile"]
 
 [tool.poetry.scripts]
 picklechecker = "picklechecker.cli:main"
@@ -32,12 +31,19 @@ python-dotenv = "^1.2.1"
 rich = "^14.2.0"
 reportlab = "^4.4.4"
 
-[tool.poetry.group.dev.dependencies]
+[tool.poetry.group.test.dependencies]
 pytest = "^7.4.0"
 pytest-cov = "^4.1.0"
-black = "^23.7.0"
-ruff = "^0.0.285"
+bandit = { version = "1.8.3", extras = ["toml"] }
 mypy = "^1.5.0"
+
+[tool.poetry.group.dev.dependencies]
+dunamai = "^1.18.0"
+pre-commit = ">=3.3.3,<5.0.0"
+black = ">=23.7,<26.0"
+
+[tool.poetry.group.prod.dependencies]
+dunamai = "^1.18.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -54,11 +60,8 @@ addopts = "--cov=picklechecker --cov-report=html --cov-report=term-missing"
 line-length = 100
 target-version = ['py310', 'py311']
 
-[tool.ruff]
-line-length = 100
-select = ["E", "F", "I", "N", "W", "UP"]
-ignore = []
-target-version = "py310"
+[tool.bandit]
+exclude_dirs = ["tests"]
 
 [tool.mypy]
 python_version = "3.10"

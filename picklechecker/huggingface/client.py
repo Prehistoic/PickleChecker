@@ -4,6 +4,9 @@ from huggingface_hub import snapshot_download, hf_hub_download
 
 from picklechecker.config import HF_TOKEN, HF_ETAG_TIMEOUT
 
+class HuggingfaceClientError(RuntimeError):
+    """Raised for errors originating from HuggingfaceClient operations."""
+
 class HuggingfaceClient:
     """
     A dedicated client for interacting with the Hugging Face Hub. 
@@ -21,8 +24,7 @@ class HuggingfaceClient:
         self.download_dir = download_dir
 
         if not self.hf_token:
-            self.logger.error("Required environment variable HF_TOKEN is not set !")
-            raise
+            self.logger.warning("Environment variable HF_TOKEN is not set !")
 
     def download_repo(self, repo_name: str, allow_patterns: list) -> str:
         """
@@ -40,17 +42,19 @@ class HuggingfaceClient:
         """
         self.logger.info(f"Starting full repository download for: {repo_name}")
         try:
-            local_path = snapshot_download(
-                repo_id=repo_name,
-                token=self.hf_token,
-                local_dir=self.download_dir,
-                etag_timeout=self.etag_timeout,
-                allow_patterns=allow_patterns
-            )
+            params = {
+                "repo_id": repo_name,
+                "local_dir": self.download_dir,
+                "etag_timeout": self.etag_timeout,
+                "allow_patterns": allow_patterns,
+            }
+            if self.hf_token:
+                params["token"] = self.hf_token
+
+            local_path = snapshot_download(**params)
             self.logger.info(f"Repository {repo_name} successfully downloaded to: {local_path}")
         except Exception as e:
-            self.logger.error(f"Failed to download Huggingface repo {repo_name}: {str(e)}")
-            raise
+            raise HuggingfaceClientError(f"Failed to download repository '{repo_name}'") from e
 
     def download_file(self, repo_name: str, filename: str) -> str:
         """
@@ -74,5 +78,4 @@ class HuggingfaceClient:
             )
             self.logger.info(f"File {filename} successfully downloaded to: {file_path}")
         except Exception as e:
-            self.logger.error(f"Failed to download {filename} from Huggingface repo {repo_name}: {str(e)}")
-            raise
+            raise HuggingfaceClientError(f"Failed to download file '{filename}' from '{repo_name}'") from e

@@ -4,9 +4,10 @@ import tempfile
 import logging
 import sys
 
-from picklechecker.logging_helper import setup_logging
-from picklechecker.huggingface_client import HuggingfaceClient
-from picklechecker.banner import display_banner
+from picklechecker.utils.logging_helper import set_global_logging_level
+from picklechecker.huggingface.client import HuggingfaceClient
+
+logger = logging.getLogger(__name__)
 
 @click.command()
 @click.option("--verbose", "-v", is_flag=True, default=False, help="Verbose mode")
@@ -19,14 +20,11 @@ def main(verbose: bool, scan_dir: str | None, scan_file: str | None, hf_model: s
     """
     CLI entrypoint for PickleChecker
     """
-    # Display banner
-    display_banner()
+    # Set logging level
+    if verbose:
+        set_global_logging_level(logging.DEBUG)
 
-    # Setup logging
-    setup_logging(level=logging.DEBUG) if verbose else setup_logging(level=logging.INFO)
-    logger = logging.getLogger(__name__)
-
-    # Determine target and run scans
+    # Determine target and run scan
     if scan_dir:
         logger.info("Launching directory scan: %s", scan_dir)
     elif scan_file:
