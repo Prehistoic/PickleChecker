@@ -1,4 +1,6 @@
 import logging
+import tempfile
+from typing import List
 
 from huggingface_hub import snapshot_download, hf_hub_download
 
@@ -21,12 +23,13 @@ class HuggingfaceClient:
         """
         self.hf_token = HF_TOKEN
         self.etag_timeout = HF_ETAG_TIMEOUT
-        self.download_dir = download_dir
 
         if not self.hf_token:
             self.logger.warning("Environment variable HF_TOKEN is not set !")
+        
+        self.download_dir = download_dir
 
-    def download_repo(self, repo_name: str, allow_patterns: list) -> str:
+    def download_repo(self, repo_name: str, allow_patterns: List = [], ignore_patterns: List = []) -> str:
         """
         Downloads a complete repository snapshot from Hugging Face.
 
@@ -45,10 +48,18 @@ class HuggingfaceClient:
             params = {
                 "repo_id": repo_name,
                 "local_dir": self.download_dir,
-                "etag_timeout": self.etag_timeout,
-                "allow_patterns": allow_patterns,
+                "etag_timeout": self.etag_timeout
             }
+            if allow_patterns:
+                self.logger.debug(f"Allow Patterns: {allow_patterns}")
+                params["allow_patterns"] = allow_patterns
+
+            if ignore_patterns:
+                self.logger.debug(f"Ignore Patterns: {ignore_patterns}")
+                params["ignore_patterns"] = ignore_patterns
+
             if self.hf_token:
+                self.logger.debug("Using token to authenticate")
                 params["token"] = self.hf_token
 
             local_path = snapshot_download(**params)
@@ -69,13 +80,17 @@ class HuggingfaceClient:
         """
         self.logger.info(f"Starting file download for: {repo_name}/{filename}")
         try:
-            file_path = hf_hub_download(
-                repo_id=repo_name,
-                filename=filename,
-                token=self.hf_token,
-                local_dir=self.download_dir,
-                etag_timeout=self.etag_timeout
-            )
+            params = {
+                "repo_id": repo_name,
+                "filename": filename,
+                "local_dir": self.download_dir,
+                "etag_timeout": self.etag_timeout
+            }
+            if self.hf_token:
+                self.logger.debug("Using token to authenticate")
+                params["token"] = self.hf_token
+
+            file_path = hf_hub_download(**params)
             self.logger.info(f"File {filename} successfully downloaded to: {file_path}")
         except Exception as e:
             raise HuggingfaceClientError(f"Failed to download file '{filename}' from '{repo_name}'") from e
