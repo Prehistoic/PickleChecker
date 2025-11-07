@@ -7,6 +7,10 @@ load_dotenv()
 # Misc
 PROJECT_NAME = "PickleChecker"
 
+# Output config
+OUTPUT_DIR = "output"
+OUTPUT_FILENAME_NO_EXT = f"{PROJECT_NAME.lower()}_results"
+
 # Huggingface config
 HF_TOKEN = os.getenv("HF_TOKEN", None)
 HF_DOWNLOAD_DIR = "downloads"

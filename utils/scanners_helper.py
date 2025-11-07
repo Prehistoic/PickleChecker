@@ -1,18 +1,18 @@
 import importlib
 import inspect
+from typing import List, Tuple
 from pathlib import Path
 
 from utils.logging_helper import get_logger
-from utils.console_helper import ConsoleHelper
-from utils.pickle_helper import PickleAnalyzer
-from scanners import Scanner
+from utils.pickle_helper import PickleAnalyzer, PickleAnalysis
+from scanners import Scanner, ScanResult
 
 class ScannersHelper:
 
     logger = get_logger(__name__)
 
     @classmethod
-    def run_directory_scan_all_scanners(self, dirpath: str):
+    def run_directory_scan_all_scanners(self, dirpath: str) -> Tuple[List[ScanResult], List[PickleAnalysis]]:
         """
         Dynamically loads all modules in the 'scanners' directory and executes 
         the run_directory_scan method on any class inheriting from Scanner.
@@ -55,11 +55,10 @@ class ScannersHelper:
             except Exception as e:
                 self.logger.error(f"Error while running {module_name}: {e}")
 
-        # Finally we display the scan results in the console
-        ConsoleHelper.display_results(scanner_results, pickle_analyses)
+        return scanner_results, pickle_analyses
 
     @classmethod
-    def run_file_scan_all_scanners(self, filepath: str):
+    def run_file_scan_all_scanners(self, filepath: str) -> Tuple[List[ScanResult], List[PickleAnalysis]]:
         """
         Dynamically loads all modules in the 'scanners' directory and executes 
         the run_file_scan method on any class inheriting from Scanner.
@@ -102,5 +101,4 @@ class ScannersHelper:
             except Exception as e:
                 self.logger.error(f"Error while running {module_name} scanner: {e}")
 
-        # Finally we display the scan results in the console
-        ConsoleHelper.display_results(scanner_results, [pickle_analysis])
+        return scanner_results, [pickle_analysis]
