@@ -10,8 +10,6 @@ class PicklescanScanner(Scanner):
     def _perform_file_scan(self, filepath: str) -> ScanResult:
         picklescan_result = scan_file_path(filepath)
 
-        #self.logger.debug(picklescan_result.to_dict())
-
         # If picklescan returns an error we return ScanStatus.FAILED
         if picklescan_result.scan_err:
             return self._build_failed_result(filepath, "Unknown error when running picklescan")
