@@ -6,12 +6,14 @@ from huggingface_hub import snapshot_download, hf_hub_download
 
 from picklechecker.config import HF_TOKEN, HF_ETAG_TIMEOUT
 
+
 class HuggingfaceClientError(RuntimeError):
     """Raised for errors originating from HuggingfaceClient operations."""
 
+
 class HuggingfaceClient:
     """
-    A dedicated client for interacting with the Hugging Face Hub. 
+    A dedicated client for interacting with the Hugging Face Hub.
     Handles authentication, and the downloading of models or individual files.
     """
 
@@ -26,10 +28,12 @@ class HuggingfaceClient:
 
         if not self.hf_token:
             self.logger.warning("Environment variable HF_TOKEN is not set !")
-        
+
         self.download_dir = download_dir
 
-    def download_repo(self, repo_name: str, allow_patterns: List = [], ignore_patterns: List = []) -> None:
+    def download_repo(
+        self, repo_name: str, allow_patterns: List = [], ignore_patterns: List = []
+    ) -> None:
         """
         Downloads a complete repository snapshot from Hugging Face.
 
@@ -45,7 +49,7 @@ class HuggingfaceClient:
             params = {
                 "repo_id": repo_name,
                 "local_dir": self.download_dir,
-                "etag_timeout": self.etag_timeout
+                "etag_timeout": self.etag_timeout,
             }
             if allow_patterns:
                 self.logger.debug(f"Allow Patterns: {allow_patterns}")
@@ -81,7 +85,7 @@ class HuggingfaceClient:
                 "repo_id": repo_name,
                 "filename": filename,
                 "local_dir": self.download_dir,
-                "etag_timeout": self.etag_timeout
+                "etag_timeout": self.etag_timeout,
             }
             if self.hf_token:
                 self.logger.debug("Using token to authenticate")
@@ -90,4 +94,6 @@ class HuggingfaceClient:
             file_path = hf_hub_download(**params)
             self.logger.info(f"File {filename} successfully downloaded to: {file_path}")
         except Exception as e:
-            raise HuggingfaceClientError(f"Failed to download file '{filename}' from '{repo_name}'") from e
+            raise HuggingfaceClientError(
+                f"Failed to download file '{filename}' from '{repo_name}'"
+            ) from e

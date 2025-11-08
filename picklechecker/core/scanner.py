@@ -6,10 +6,10 @@ import pickletools
 from picklechecker.core.results import AnalysisResult, AnalysisStatus
 from picklechecker.core.extractor import PickleExtractor
 
-class PickleScanner:
 
+class PickleScanner:
     logger = logging.getLogger(__name__)
-    
+
     @classmethod
     def _list_globals(cls, data: IO[bytes], result: AnalysisResult) -> None:
         ops = []
@@ -24,7 +24,7 @@ class PickleScanner:
         except Exception as e:
             cls.logger.warning(f"Error while parsing pickle: {e}")
             got_an_error = True
-        
+
         memo = {}
         globals_set = set()
 
@@ -61,8 +61,13 @@ class PickleScanner:
                     if prev_name in ["GET", "BINGET", "LONG_BINGET"]:
                         values.append(memo.get(int(prev_op[1]), "unknown"))
                     elif prev_name not in [
-                        "SHORT_BINUNICODE", "UNICODE", "BINUNICODE", "BINUNICODE8",
-                        "STRING", "BINSTRING", "SHORT_BINSTRING"
+                        "SHORT_BINUNICODE",
+                        "UNICODE",
+                        "BINUNICODE",
+                        "BINUNICODE8",
+                        "STRING",
+                        "BINSTRING",
+                        "SHORT_BINSTRING",
                     ]:
                         values.append("unknown")
                     else:
@@ -70,7 +75,9 @@ class PickleScanner:
                     if len(values) == 2:
                         break
                 if len(values) != 2:
-                    result.errors.append(f"STACK_GLOBAL at position {n}: found {len(values)} values instead of 2")
+                    result.errors.append(
+                        f"STACK_GLOBAL at position {n}: found {len(values)} values instead of 2"
+                    )
                     continue
                 module, name = values[1], values[0]
                 globals_set.add((module, name))
@@ -85,11 +92,13 @@ class PickleScanner:
     def scan_file(cls, filepath: str | Path) -> AnalysisResult:
         target_filepath = Path(filepath)
         result = AnalysisResult(source_path=target_filepath)
-        
+
         try:
             blobs = PickleExtractor.extract_pickles_from_filepath(target_filepath)
         except Exception as e:
-            cls.logger.error(f"Failed to extract pickles from {target_filepath}: {str(e)}", exc_info=True)
+            cls.logger.error(
+                f"Failed to extract pickles from {target_filepath}: {str(e)}", exc_info=True
+            )
             result.status = AnalysisStatus.FAILED
             return result
 
@@ -97,13 +106,15 @@ class PickleScanner:
             try:
                 cls._list_globals(blob, result)
             except Exception as e:
-                cls.logger.error(f"Failed to list globals for blob in {target_filepath}: {str(e)}", exc_info=True)
+                cls.logger.error(
+                    f"Failed to list globals for blob in {target_filepath}: {str(e)}", exc_info=True
+                )
                 result.status = AnalysisStatus.FAILED
                 return result
 
         result.compute_safety_level()
         return result
-    
+
     @classmethod
     def scan_directory(cls, dirpath: str | Path) -> List[AnalysisResult]:
         target_dirpath = Path(dirpath)
@@ -111,8 +122,10 @@ class PickleScanner:
 
         # rglob('*') recursively yields every file and directory in the tree.
         # We then filter for files and extensions associated with pickle.
-        for file_path in target_dirpath.rglob('*'):
-            if file_path.is_file() and not any(part.startswith('.') for part in file_path.parts):  # Skip files in dot-directories or dot-files:
+        for file_path in target_dirpath.rglob("*"):
+            if file_path.is_file() and not any(
+                part.startswith(".") for part in file_path.parts
+            ):  # Skip files in dot-directories or dot-files:
                 cls.logger.debug(f"Analyzing {file_path}...")
                 result = cls.scan_file(file_path)
                 result.compute_safety_level()

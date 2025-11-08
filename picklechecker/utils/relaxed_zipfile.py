@@ -14,6 +14,7 @@ structFileHeader = "<4s2B4HL2L2H"
 stringFileHeader = b"PK\003\004"
 sizeFileHeader = struct.calcsize(structFileHeader)
 
+
 class RelaxedZipFile(zipfile.ZipFile):
     def open(self, name, mode="r", pwd=None, *, force_zip64=False):
         """Return file-like object for 'name'.

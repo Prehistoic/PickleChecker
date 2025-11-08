@@ -6,11 +6,13 @@ from enum import Enum
 from picklechecker.core.safety import SafetyLevel
 from picklechecker.core.globals import SAFE_GLOBALS, UNSAFE_GLOBALS, GlobalReference
 
+
 class AnalysisStatus(Enum):
     ONGOING = 0
     COMPLETED = 1
     COMPLETED_WITH_ERRORS = 2
     FAILED = 3
+
 
 @dataclass
 class AnalysisResult:
@@ -29,7 +31,7 @@ class AnalysisResult:
             safety = SafetyLevel.INNOCUOUS
         else:
             safety = SafetyLevel.SUSPICIOUS
-        
+
         reference = GlobalReference(module, name, opcode, line, safety)
         self.globals_found.append(reference)
 

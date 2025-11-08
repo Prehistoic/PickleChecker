@@ -9,14 +9,18 @@ import logging
 import os
 
 from picklechecker.config import (
-    RAW_PICKLE_FILES_EXT, RAW_PICKLE_FILES_MAGIC, 
-    NUMPY_FILES_EXT, NUMPY_FILES_MAGIC,
-    PYTORCH_FILES_EXT, PYTORCH_FILES_MAGIC,
-    ZIP_FILES_MAGIC
+    RAW_PICKLE_FILES_EXT,
+    RAW_PICKLE_FILES_MAGIC,
+    NUMPY_FILES_EXT,
+    NUMPY_FILES_MAGIC,
+    PYTORCH_FILES_EXT,
+    PYTORCH_FILES_MAGIC,
+    ZIP_FILES_MAGIC,
 )
 from picklechecker.utils.relaxed_zipfile import RelaxedZipFile
 from picklechecker.utils.torch_helper import TorchHelper, InvalidMagicError
 from picklechecker.utils.zip_helper import ZipHelper
+
 
 class PickleExtractor:
     """
@@ -24,7 +28,7 @@ class PickleExtractor:
     """
 
     logger = logging.getLogger(__name__)
-        
+
     @classmethod
     def extract_pickles_from_filepath(cls, filepath: str | Path) -> List[bytes]:
         cls.logger.debug(f"Extracting pickles from {filepath}")
@@ -32,21 +36,25 @@ class PickleExtractor:
         file_ext = os.path.splitext(filepath)[1]
         with open(filepath, "rb") as file:
             return cls.extract_pickles_from_bytes(file, filepath, file_ext)
-    
+
     @classmethod
-    def extract_pickles_from_bytes(cls, data: IO[bytes], filepath: str | Path, file_ext: Optional[str] = None) -> List[bytes]:
+    def extract_pickles_from_bytes(
+        cls, data: IO[bytes], filepath: str | Path, file_ext: Optional[str] = None
+    ) -> List[bytes]:
         cls.logger.debug(f"Extracting pickles from bytes coming from {filepath}")
 
         if file_ext is not None and file_ext in PYTORCH_FILES_EXT:
             try:
                 return cls.extract_pickles_from_pytorch(data, filepath)
             except InvalidMagicError as e:
-                cls.logger.warning(f"Invalid PyTorch magic number for file {e}. Trying to scan as non-PyTorch file.")
+                cls.logger.warning(
+                    f"Invalid PyTorch magic number for file {e}. Trying to scan as non-PyTorch file."
+                )
                 data.seek(0)
 
         if file_ext is not None and file_ext in NUMPY_FILES_EXT:
             return cls.extract_pickles_from_numpy(data, filepath)
-        
+
         is_zip = ZipHelper._is_zip_file(data)
         data.seek(0)
         if is_zip:
@@ -62,9 +70,11 @@ class PickleExtractor:
         cls.logger.debug(f"Extracting pickles from 7z archive {filepath}")
 
         if not ZipHelper._is_7z_file(data):
-            cls.logger.warning(f"Failed to extract pickles from {filepath}. Not a valid 7z archive.")
+            cls.logger.warning(
+                f"Failed to extract pickles from {filepath}. Not a valid 7z archive."
+            )
             return []
-        
+
         extracted_pickles = []
 
         with py7zr.SevenZipFile(data, mode="r") as archive:
@@ -88,7 +98,9 @@ class PickleExtractor:
         cls.logger.debug(f"Extracting pickles from ZIP archive {filepath}")
 
         if not zipfile.is_zipfile(data):
-            cls.logger.warning(f"Failed to extract pickles from {filepath}. Not a valid ZIP archive.")
+            cls.logger.warning(
+                f"Failed to extract pickles from {filepath}. Not a valid ZIP archive."
+            )
             return []
 
         extracted_pickles = []
@@ -104,7 +116,9 @@ class PickleExtractor:
 
                     file_ext = os.path.splitext(filename)[1]
 
-                    if file_ext in RAW_PICKLE_FILES_EXT or any(magic_bytes.startswith(mn) for mn in RAW_PICKLE_FILES_MAGIC):
+                    if file_ext in RAW_PICKLE_FILES_EXT or any(
+                        magic_bytes.startswith(mn) for mn in RAW_PICKLE_FILES_MAGIC
+                    ):
                         cls.logger.debug(f"Found raw pickle file {filename} in {filepath}")
                         with zip.open(filename, "r") as file:
                             extracted_pickles.append(file.read())
@@ -116,12 +130,14 @@ class PickleExtractor:
 
                 except (zipfile.BadZipFile, RuntimeError) as e:
                     # Log decompression issues (password protected, corrupted, etc.)
-                    cls.logger.warning(f"Invalid file {filename} in zip archive {filepath}: {str(e)}")
+                    cls.logger.warning(
+                        f"Invalid file {filename} in zip archive {filepath}: {str(e)}"
+                    )
 
         return extracted_pickles
 
     @classmethod
-    def extract_pickles_from_numpy(cls,  data: IO[bytes], filepath: str | Path) -> List[bytes]:
+    def extract_pickles_from_numpy(cls, data: IO[bytes], filepath: str | Path) -> List[bytes]:
         cls.logger.debug(f"Extracting pickles from numpy file {filepath}")
 
         N = len(NUMPY_FILES_MAGIC)
@@ -143,14 +159,13 @@ class PickleExtractor:
 
             if dtype.hasobject:
                 return [Path(filepath).read_bytes()]
-            
+
             else:
                 cls.logger.info(f"{filepath} does not contain any pickled data")
                 return []
-        
+
         else:
             return [Path(filepath).read_bytes()]
-
 
     @classmethod
     def extract_pickles_from_pytorch(cls, data: IO[bytes], filepath: str | Path) -> List[bytes]:
@@ -161,7 +176,7 @@ class PickleExtractor:
             return cls.extract_pickles_from_zip(data, filepath)
         elif ZipHelper._is_7z_file(data):
             return cls.extract_pickles_from_7z(data, filepath)
-        
+
         # Old PyTorch format
         else:
             extracted_pickles = []
@@ -170,7 +185,9 @@ class PickleExtractor:
             if should_read_directly and data.tell() == 0:
                 try:
                     # TODO: implement loading from tar
-                    cls.logger.error(f"Should read {filepath} directly and load it as a tar archive")
+                    cls.logger.error(
+                        f"Should read {filepath} directly and load it as a tar archive"
+                    )
                     raise TarError()
                 except TarError:
                     # File does not contain a valid tar
@@ -180,7 +197,7 @@ class PickleExtractor:
             magic = TorchHelper.get_magic_number(data)
             if magic != PYTORCH_FILES_MAGIC:
                 raise InvalidMagicError(magic, PYTORCH_FILES_MAGIC, filepath)
-            
+
             for _ in range(5):
                 extracted_pickles.extend(cls.extract_pickles_from_bytes(data, filepath))
 

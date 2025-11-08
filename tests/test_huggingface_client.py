@@ -2,9 +2,11 @@ import importlib
 import logging
 import pytest
 
+
 # Reload modules to pick up env changes
 def _reload_modules():
     import picklechecker.config as cfg
+
     importlib.reload(cfg)
     return importlib.reload(importlib.import_module("picklechecker.huggingface.client"))
 
@@ -67,6 +69,7 @@ def test_download_repo_without_token(monkeypatch, caplog):
     assert called["local_dir"] == "dl_no_token"
     assert "token" not in called
     assert "Using token to authenticate" not in caplog.text
+
 
 def test_download_file_with_token(monkeypatch, caplog):
     monkeypatch.setenv("HF_TOKEN", "file-token")

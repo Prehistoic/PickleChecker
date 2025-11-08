@@ -10,6 +10,7 @@ from picklechecker.config import SAFE_GLOBALS_FILEPATH, UNSAFE_GLOBALS_FILEPATH
 SAFE_GLOBALS = json.load(open(SAFE_GLOBALS_FILEPATH))
 UNSAFE_GLOBALS = json.load(open(UNSAFE_GLOBALS_FILEPATH))
 
+
 @dataclass
 class GlobalReference:
     module: str
@@ -18,8 +19,8 @@ class GlobalReference:
     line: int  # sequential index of opcode
     safety: SafetyLevel
 
-class GlobalHelper:
 
+class GlobalHelper:
     logger = logging.getLogger(__name__)
 
     @classmethod
@@ -27,11 +28,11 @@ class GlobalHelper:
         if not items:
             cls.logger.debug(f"No {label} globals update: empty list")
             return
-        
+
         if label not in ["safe", "unsafe"]:
             cls.logger.error(f"Unknown label {label}. Skipping globals update...")
             return
-        
+
         globals_dict = UNSAFE_GLOBALS if label == "unsafe" else SAFE_GLOBALS
 
         for item in items:
@@ -49,7 +50,7 @@ class GlobalHelper:
                         globals_dict[module].update(names)
 
                     cls.logger.info(f"Loaded {label} globals from {item}")
-                
+
                 except Exception as e:
                     cls.logger.error(f"Failed to load JSON from {item}: {e}")
 

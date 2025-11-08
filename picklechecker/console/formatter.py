@@ -9,8 +9,8 @@ from rich import box
 from picklechecker.core.results import AnalysisResult, AnalysisStatus
 from picklechecker.core.safety import SafetyLevel
 
-class ConsoleResultsFormatter:
 
+class ConsoleResultsFormatter:
     logger = logging.getLogger(__name__)
     console = Console()
 
@@ -39,19 +39,14 @@ class ConsoleResultsFormatter:
         Returns:
             Panel: rich Panel object
         """
-        result_container = Table(
-            show_header=False,
-            box=None,
-            padding=0,
-            collapse_padding=True
-        )
+        result_container = Table(show_header=False, box=None, padding=0, collapse_padding=True)
 
         imports_table = Table(
             box=box.ROUNDED,
             show_header=True,
             header_style="bold magenta",
             show_lines=True,
-            expand=False
+            expand=False,
         )
 
         imports_table.add_column("Global Import")
@@ -67,11 +62,12 @@ class ConsoleResultsFormatter:
 
                 imports_table.add_row(
                     f"[blue]{module}[/blue].[bold]{name}[/bold]",
-                    f"[{cls.safety_style(safety)} bold]{safety.name}[/]"
+                    f"[{cls.safety_style(safety)} bold]{safety.name}[/]",
                 )
 
-
-        result_container.add_row(f"[bold]{result.source_path.name}[/bold] --> [{cls.safety_style(result.safety)}]{result.safety.name}[/]")
+        result_container.add_row(
+            f"[bold]{result.source_path.name}[/bold] --> [{cls.safety_style(result.safety)}]{result.safety.name}[/]"
+        )
         result_container.add_row(imports_table)
 
         return result_container
@@ -84,7 +80,7 @@ class ConsoleResultsFormatter:
         Args:
             results: List of AnalysisResult
 
-        Returns: 
+        Returns:
             Panel: rich Panel object
         """
         # Compute stats to show
@@ -97,20 +93,10 @@ class ConsoleResultsFormatter:
         dangerous = sum(1 for r in results if r.safety == SafetyLevel.DANGEROUS)
 
         # Create the main summary container
-        summary_container = Table(
-            show_header=False,
-            box=None,
-            padding=0,
-            collapse_padding=True
-        )
-        
+        summary_container = Table(show_header=False, box=None, padding=0, collapse_padding=True)
+
         # Add totals section
-        totals_table = Table(
-            show_header=False,
-            box=None,
-            padding=(0, 2),
-            collapse_padding=True
-        )
+        totals_table = Table(show_header=False, box=None, padding=(0, 2), collapse_padding=True)
         totals_table.add_row("Total files scanned: ", str(total_files))
         totals_table.add_row(" - Completed:", str(completed_scans))
         totals_table.add_row(" - Completed with errors: ", str(partial_scans))
@@ -118,18 +104,17 @@ class ConsoleResultsFormatter:
 
         # Create safety_results_table table
         safety_results_table = Table(
-            show_header=False,
-            box=None,
-            padding=(0, 2),
-            collapse_padding=True
+            show_header=False, box=None, padding=(0, 2), collapse_padding=True
         )
-        
+
         safety_results_table.add_column("Icon", style="bold", no_wrap=True)
         safety_results_table.add_column("Label", style="bold", no_wrap=True)
-        safety_results_table.add_column("Count", justify="right", no_wrap=True)  # No need for ratio here
+        safety_results_table.add_column(
+            "Count", justify="right", no_wrap=True
+        )  # No need for ratio here
 
         # Add the statistics rows
-        safety_results_table.add_row(" ") # For better alignment with totals_table
+        safety_results_table.add_row(" ")  # For better alignment with totals_table
         safety_results_table.add_row("✅", "Safe", str(safe))
         safety_results_table.add_row("⚠️", "Suspicious", str(suspicious))
         safety_results_table.add_row("❌", "Dangerous", str(dangerous))
@@ -138,11 +123,7 @@ class ConsoleResultsFormatter:
         summary_container.add_row(totals_table, safety_results_table)
 
         summary = Panel(
-            summary_container,
-            title="Summary",
-            box=box.ROUNDED,
-            expand=False,
-            padding=(1, 2)
+            summary_container, title="Summary", box=box.ROUNDED, expand=False, padding=(1, 2)
         )
 
         return summary
@@ -152,14 +133,14 @@ class ConsoleResultsFormatter:
         """
         Display scan results formatted using rich library
         """
-        print(" ") # Adding an empty line for spacing
+        print(" ")  # Adding an empty line for spacing
 
         # Create a panel for each file result
         for result in results:
             result_panel = cls._create_result_panel(result)
             cls.console.print(result_panel)
 
-            print(" ") # Adding an empty line for spacing
+            print(" ")  # Adding an empty line for spacing
 
         # Create summary panel
         if results:

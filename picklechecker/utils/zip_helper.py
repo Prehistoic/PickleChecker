@@ -4,8 +4,8 @@ import logging
 
 from picklechecker.config import _7Z_FILES_MAGIC
 
-class ZipHelper:
 
+class ZipHelper:
     logger = logging.getLogger(__name__)
 
     @classmethod
@@ -26,13 +26,13 @@ class ZipHelper:
 
             if len(header) < 6:
                 return False
-            
+
             return header == _7Z_FILES_MAGIC
-        
+
         except (OSError, IOError) as e:
             cls.logger.debug(f"Error reading file header: {e}")
             return False
-        
+
     @classmethod
     def _is_zip_file(cls, data: IO[bytes]) -> bool:
         """

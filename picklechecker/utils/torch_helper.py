@@ -3,6 +3,7 @@ import pickletools
 from typing import IO, Optional
 import logging
 
+
 class InvalidMagicError(Exception):
     def __init__(self, provided_magic: Optional[int], magic: int, file: str):
         self.provided_magic = provided_magic
@@ -13,8 +14,8 @@ class InvalidMagicError(Exception):
     def __str__(self) -> str:
         return f"{self.file}: {self.provided_magic} != {self.magic}"
 
-class TorchHelper:
 
+class TorchHelper:
     logger = logging.getLogger(__name__)
 
     # copied from pytorch code
@@ -80,5 +81,5 @@ class TorchHelper:
                     return int(args)
         except ValueError:
             return None
-        
+
         return None

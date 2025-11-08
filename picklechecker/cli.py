@@ -16,42 +16,96 @@ from picklechecker.config import HF_ALLOW_PATTERNS, HF_IGNORE_PATTERNS
 
 logger = logging.getLogger(__name__)
 
+
 @click.command()
 # General Options
-@click.option("--verbose", "-v", is_flag=True, default=False, help="Enable verbose logging for detailed output")
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    default=False,
+    help="Enable verbose logging for detailed output",
+)
 
 # Globals Update Options
 @optgroup.group("Globals Update", help="Specify new Globals to allow/disallow")
-@optgroup.option("--add-safe", multiple=True, help="Add safe global in format 'module:name' or path to JSON file (can be used multiple times)")
-@optgroup.option("--add-unsafe", multiple=True, help="Add unsafe global in format 'module:name' or path to JSON file (can be used multiple times)")
+@optgroup.option(
+    "--add-safe",
+    multiple=True,
+    help="Add safe global in format 'module:name' or path to JSON file (can be used multiple times)",
+)
+@optgroup.option(
+    "--add-unsafe",
+    multiple=True,
+    help="Add unsafe global in format 'module:name' or path to JSON file (can be used multiple times)",
+)
 
 # Scan Target Options (exactly one must be chosen)
-@optgroup.group("Scan Target", cls=RequiredMutuallyExclusiveOptionGroup, help="Specify the target to scan")
-@optgroup.option("--directory", "-d", "scan_dir", type=click.Path(exists=True, file_okay=False, dir_okay=True), help="Scan all files in the specified directory")
-@optgroup.option("--file", "-f", "scan_file", type=click.Path(exists=True, file_okay=True, dir_okay=False), help="Scan a specific file")
-@optgroup.option("--model", "-m", "hf_model", type=str, help='Scan a Hugging Face model by name (e.g., "bert-base-uncased")')
+@optgroup.group(
+    "Scan Target", cls=RequiredMutuallyExclusiveOptionGroup, help="Specify the target to scan"
+)
+@optgroup.option(
+    "--directory",
+    "-d",
+    "scan_dir",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Scan all files in the specified directory",
+)
+@optgroup.option(
+    "--file",
+    "-f",
+    "scan_file",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
+    help="Scan a specific file",
+)
+@optgroup.option(
+    "--model",
+    "-m",
+    "hf_model",
+    type=str,
+    help='Scan a Hugging Face model by name (e.g., "bert-base-uncased")',
+)
 
 # Download Options (relevant for --model)
 @optgroup.group("Download Options", help="Options for downloading Hugging Face models")
-@optgroup.option("--download-dir", "download_dir", type=click.Path(file_okay=False, dir_okay=True), help="Directory to download HF models to (uses temp dir if not specified)")
-@optgroup.option("--full-download", "full_download", is_flag=True, help="Toggle full download of Huggingface model files")
+@optgroup.option(
+    "--download-dir",
+    "download_dir",
+    type=click.Path(file_okay=False, dir_okay=True),
+    help="Directory to download HF models to (uses temp dir if not specified)",
+)
+@optgroup.option(
+    "--full-download",
+    "full_download",
+    is_flag=True,
+    help="Toggle full download of Huggingface model files",
+)
 
 # Output Options
 @optgroup.group("Output Options", help="Options for exporting scan results")
-@optgroup.option("--output-dir", "output_dir", type=click.Path(file_okay=False, dir_okay=True), help="Directory to save exported results")
-@optgroup.option("--output-format", "output_format", type=click.Choice(["pdf"]), help="Format for exported results (pdf only; no export if not specified)")
-
+@optgroup.option(
+    "--output-dir",
+    "output_dir",
+    type=click.Path(file_okay=False, dir_okay=True),
+    help="Directory to save exported results",
+)
+@optgroup.option(
+    "--output-format",
+    "output_format",
+    type=click.Choice(["pdf"]),
+    help="Format for exported results (pdf only; no export if not specified)",
+)
 def main(
     verbose: bool,
     add_safe: Tuple[str, ...],
     add_unsafe: Tuple[str, ...],
-    scan_dir: str | None, 
-    scan_file: str | None, 
+    scan_dir: str | None,
+    scan_file: str | None,
     hf_model: str | None,
     download_dir: str | None,
     full_download: bool,
     output_dir: str | None,
-    output_format: str | None
+    output_format: str | None,
 ) -> int:
     """
     CLI entrypoint for PickleChecker
@@ -85,9 +139,7 @@ def main(
         try:
             hf_client = HuggingfaceClient(download_dir)
 
-            params = {
-                "repo_name": hf_model
-            }
+            params = {"repo_name": hf_model}
             if not full_download:
                 params["allow_patterns"] = HF_ALLOW_PATTERNS
                 params["ignore_patterns"] = HF_IGNORE_PATTERNS
@@ -98,18 +150,19 @@ def main(
             return 1
 
         results = PickleScanner.scan_directory(download_dir)
-        
+
     # Exporting results if an output_format has been chosen
     if output_format is None:
         logger.info("No output format specified. Skipping export...")
 
     elif output_format == "pdf":
         logger.info("Launching export to PDF")
-    
+
     # Displaying results to console
     ConsoleResultsFormatter.display_results(results)
 
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class SafetyLevel(Enum):
     UNKNOWN = -1
     INNOCUOUS = 0
