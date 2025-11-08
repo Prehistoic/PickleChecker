@@ -11,6 +11,7 @@ from picklechecker.utils.logging_helper import set_global_logging_level
 from picklechecker.huggingface.client import HuggingfaceClient, HuggingfaceClientError
 from picklechecker.core.scanner import PickleScanner
 from picklechecker.core.globals import GlobalHelper
+from picklechecker.console.results import ConsoleResultsFormatter
 from picklechecker.config import HF_ALLOW_PATTERNS, HF_IGNORE_PATTERNS
 
 logger = logging.getLogger(__name__)
@@ -67,11 +68,9 @@ def main(
     if scan_dir:
         logger.info("Launching directory scan: %s", scan_dir)
         results = PickleScanner.scan_directory(scan_dir)
-        print(results)
     elif scan_file:
         logger.info("Launching file scan: %s", scan_file)
-        results = PickleScanner.scan_file(scan_file)
-        print(results)
+        results = [PickleScanner.scan_file(scan_file)]
     else:
         logger.info("Launching Huggingface model scan: %s", hf_model)
 
@@ -99,14 +98,16 @@ def main(
             return 1
 
         results = PickleScanner.scan_directory(download_dir)
-        print(results)
-
+        
     # Exporting results if an output_format has been chosen
     if output_format is None:
         logger.info("No output format specified. Skipping export...")
 
     elif output_format == "pdf":
         logger.info("Launching export to PDF")
+    
+    # Displaying results to console
+    ConsoleResultsFormatter.display_results(results)
 
     return 0
 

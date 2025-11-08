@@ -3,7 +3,7 @@ from typing import IO, List
 from pathlib import Path
 import pickletools
 
-from picklechecker.core.results import AnalysisResult
+from picklechecker.core.results import AnalysisResult, AnalysisStatus
 from picklechecker.core.extractor import PickleExtractor
 
 class PickleScanner:
@@ -13,14 +13,17 @@ class PickleScanner:
     @classmethod
     def _list_globals(cls, data: IO[bytes], result: AnalysisResult) -> None:
         ops = []
-        
+        got_an_error = False
+
         # We attempt to scan imports for as much as we can until we encounter an error.
-        # Thus return the already found globals in the error & let the caller decide what to do
+        # If the opcodes are still empty after the error we consider the analysis completely failed
+        # If not we consider it has at least worked to some extent
         try:
             for op in pickletools.genops(data):
                 ops.append(op)
         except Exception as e:
             cls.logger.warning(f"Error while parsing pickle: {e}")
+            got_an_error = True
         
         memo = {}
         globals_set = set()
@@ -73,6 +76,9 @@ class PickleScanner:
                 globals_set.add((module, name))
                 result.add_global(module, name, "STACK_GLOBAL", n)
 
+        if got_an_error:
+            result.status = AnalysisStatus.COMPLETED_WITH_ERRORS if ops else AnalysisStatus.FAILED
+
     @classmethod
     def scan_file(cls, filepath: str | Path) -> AnalysisResult:
         target_filepath = Path(filepath)
@@ -81,13 +87,20 @@ class PickleScanner:
         try:
             blobs = PickleExtractor.extract_pickles_from_filepath(target_filepath)
         except Exception as e:
-            cls.logger.error(f"Failed to extract pickles from {target_filepath}: {str(e)}")
-            blobs = []
+            cls.logger.error(f"Failed to extract pickles from {target_filepath}: {str(e)}", exc_info=True)
+            result.status = AnalysisStatus.FAILED
+            return result
 
         for blob in blobs:
-            cls._list_globals(blob, result)
+            try:
+                cls._list_globals(blob, result)
+            except Exception as e:
+                cls.logger.error(f"Failed to list globals for blob in {target_filepath}: {str(e)}", exc_info=True)
+                result.status = AnalysisStatus.FAILED
+                return result
 
         result.compute_safety_level()
+        result.status = AnalysisStatus.COMPLETED
         return result
     
     @classmethod

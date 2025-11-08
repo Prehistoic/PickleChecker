@@ -1,16 +1,23 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Dict, Any
+from enum import Enum
 
 from picklechecker.core.safety import SafetyLevel
 from picklechecker.core.globals import SAFE_GLOBALS, UNSAFE_GLOBALS, GlobalReference
+
+class AnalysisStatus(Enum):
+    ONGOING = 0
+    COMPLETED = 1
+    COMPLETED_WITH_ERRORS = 2
+    FAILED = 3
 
 @dataclass
 class AnalysisResult:
     source_path: Path
     globals_found: List[GlobalReference] = field(default_factory=list)
     opcode_counts: Dict[str, int] = field(default_factory=dict)
-    errors: List[str] = field(default_factory=list)
+    status: AnalysisStatus = AnalysisStatus.ONGOING
     safety: SafetyLevel = SafetyLevel.UNKNOWN
 
     def add_global(self, module: str, name: str, opcode: str, line: int) -> None:
