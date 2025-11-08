@@ -14,6 +14,7 @@ def setup_logging(level=logging.INFO):
     # 1. Silence all annoying loggers
     logging.getLogger("httpx").setLevel(logging.CRITICAL)
     logging.getLogger("httpcore").setLevel(logging.CRITICAL)
+    logging.getLogger("filelock").setLevel(logging.CRITICAL)
 
     # 2. Configuring the project root logger
     project_root_logger = logging.getLogger()

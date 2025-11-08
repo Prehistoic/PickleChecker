@@ -12,7 +12,6 @@ class GlobalReference:
 @dataclass
 class AnalysisResult:
     source_path: Path
-    format_name: str
     globals_found: List[GlobalReference] = field(default_factory=list)
     opcode_counts: Dict[str, int] = field(default_factory=dict)
     errors: List[str] = field(default_factory=list)
@@ -23,7 +22,6 @@ class AnalysisResult:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "source_path": str(self.source_path),
-            "format": self.format_name,
             "globals_found": [g.__dict__ for g in self.globals_found],
             "opcode_counts": self.opcode_counts,
             "errors": self.errors,

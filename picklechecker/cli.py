@@ -8,7 +8,7 @@ import os
 
 from picklechecker.utils.logging_helper import set_global_logging_level
 from picklechecker.huggingface.client import HuggingfaceClient, HuggingfaceClientError
-from picklechecker.core.scanner import PickleScanner
+from picklechecker.core.pickle_analyzer import PickleAnalyzer
 from picklechecker.config import HF_ALLOW_PATTERNS, HF_IGNORE_PATTERNS
 
 logger = logging.getLogger(__name__)
@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 # Download Options (relevant for --model)
 @optgroup.group("Download Options", help='Options for downloading Hugging Face models')
 @optgroup.option("--download-dir", "download_dir", type=click.Path(file_okay=False, dir_okay=True), help="Directory to download HF models to (uses temp dir if not specified)")
+@optgroup.option("--full-download", "full_download", is_flag=True, help="Toggle full download of Huggingface model files")
 
 # Output Options
 @optgroup.group("Output Options", help='Options for exporting scan results')
@@ -38,6 +39,7 @@ def main(
     scan_file: str | None, 
     hf_model: str | None,
     download_dir: str | None,
+    full_download: bool,
     output_dir: str | None,
     output_format: str | None
 ) -> int:
@@ -51,11 +53,11 @@ def main(
     # Determine target and run scan
     if scan_dir:
         logger.info("Launching directory scan: %s", scan_dir)
-        results = PickleScanner.scan_directory(scan_dir)
+        results = PickleAnalyzer.scan_directory(scan_dir)
         print(results)
     elif scan_file:
         logger.info("Launching file scan: %s", scan_file)
-        results = PickleScanner.scan_file(scan_file)
+        results = PickleAnalyzer.scan_file(scan_file)
         print(results)
     else:
         logger.info("Launching Huggingface model scan: %s", hf_model)
@@ -70,12 +72,20 @@ def main(
 
         try:
             hf_client = HuggingfaceClient(download_dir)
-            hf_client.download_repo(hf_model, allow_patterns=HF_ALLOW_PATTERNS, ignore_patterns=HF_IGNORE_PATTERNS)
-        except HuggingfaceClientError:
-            logger.error("Failed to download model from Huggingface. Exiting...")
+
+            params = {
+                "repo_name": hf_model
+            }
+            if not full_download:
+                params["allow_patterns"] = HF_ALLOW_PATTERNS
+                params["ignore_patterns"] = HF_IGNORE_PATTERNS
+
+            hf_client.download_repo(**params)
+        except HuggingfaceClientError as e:
+            logger.error(f"Failed to download model from Huggingface: {str(e)}")
             return 1
 
-        results = PickleScanner.scan_directory(download_dir)
+        results = PickleAnalyzer.scan_directory(download_dir)
         print(results)
 
     # Exporting results if an output_format has been chosen

@@ -65,7 +65,7 @@ class HuggingfaceClient:
             local_path = snapshot_download(**params)
             self.logger.info(f"Repository {repo_name} successfully downloaded to: {local_path}")
         except Exception as e:
-            raise HuggingfaceClientError(f"Failed to download repository '{repo_name}'") from e
+            raise HuggingfaceClientError(str(e))
 
     def download_file(self, repo_name: str, filename: str) -> str:
         """
