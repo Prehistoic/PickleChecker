@@ -78,6 +78,8 @@ class PickleScanner:
 
         if got_an_error:
             result.status = AnalysisStatus.COMPLETED_WITH_ERRORS if ops else AnalysisStatus.FAILED
+        else:
+            result.status = AnalysisStatus.COMPLETED
 
     @classmethod
     def scan_file(cls, filepath: str | Path) -> AnalysisResult:
@@ -100,7 +102,6 @@ class PickleScanner:
                 return result
 
         result.compute_safety_level()
-        result.status = AnalysisStatus.COMPLETED
         return result
     
     @classmethod

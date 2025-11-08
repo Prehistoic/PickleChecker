@@ -11,7 +11,7 @@ from picklechecker.utils.logging_helper import set_global_logging_level
 from picklechecker.huggingface.client import HuggingfaceClient, HuggingfaceClientError
 from picklechecker.core.scanner import PickleScanner
 from picklechecker.core.globals import GlobalHelper
-from picklechecker.console.results import ConsoleResultsFormatter
+from picklechecker.console.formatter import ConsoleResultsFormatter
 from picklechecker.config import HF_ALLOW_PATTERNS, HF_IGNORE_PATTERNS
 
 logger = logging.getLogger(__name__)
