@@ -1,8 +1,18 @@
 import os
+import json
+from pathlib import Path
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Project root relative to this config.py file
+PROJECT_ROOT = Path(__file__).parent
+
+# Data directory and file paths (now absolute and relative to PROJECT_ROOT)
+DATA_DIR = PROJECT_ROOT / "data"
+SAFE_GLOBALS_FILEPATH = DATA_DIR / "safe_globals.json"
+UNSAFE_GLOBALS_FILEPATH = DATA_DIR / "unsafe_globals.json"
 
 # Pickle files extensions
 RAW_PICKLE_FILES_EXT = {".pkl", ".pickle"}

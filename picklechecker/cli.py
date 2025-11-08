@@ -1,4 +1,5 @@
 import click
+from typing import Tuple
 from click_option_group import optgroup, RequiredMutuallyExclusiveOptionGroup
 import tempfile
 import shutil
@@ -8,7 +9,8 @@ import os
 
 from picklechecker.utils.logging_helper import set_global_logging_level
 from picklechecker.huggingface.client import HuggingfaceClient, HuggingfaceClientError
-from picklechecker.core.pickle_analyzer import PickleAnalyzer
+from picklechecker.core.scanner import PickleScanner
+from picklechecker.core.globals import GlobalHelper
 from picklechecker.config import HF_ALLOW_PATTERNS, HF_IGNORE_PATTERNS
 
 logger = logging.getLogger(__name__)
@@ -17,24 +19,31 @@ logger = logging.getLogger(__name__)
 # General Options
 @click.option("--verbose", "-v", is_flag=True, default=False, help="Enable verbose logging for detailed output")
 
+# Globals Update Options
+@optgroup.group("Globals Update", help="Specify new Globals to allow/disallow")
+@optgroup.option("--add-safe", multiple=True, help="Add safe global in format 'module:name' or path to JSON file (can be used multiple times)")
+@optgroup.option("--add-unsafe", multiple=True, help="Add unsafe global in format 'module:name' or path to JSON file (can be used multiple times)")
+
 # Scan Target Options (exactly one must be chosen)
-@optgroup.group("Scan Target", cls=RequiredMutuallyExclusiveOptionGroup, help='Specify the target to scan')
-@optgroup.option("--directory", "-d", "scan_dir", type=click.Path(exists=True, file_okay=False, dir_okay=True), help='Scan all files in the specified directory')
-@optgroup.option("--file", "-f", "scan_file", type=click.Path(exists=True, file_okay=True, dir_okay=False), help='Scan a specific file')
+@optgroup.group("Scan Target", cls=RequiredMutuallyExclusiveOptionGroup, help="Specify the target to scan")
+@optgroup.option("--directory", "-d", "scan_dir", type=click.Path(exists=True, file_okay=False, dir_okay=True), help="Scan all files in the specified directory")
+@optgroup.option("--file", "-f", "scan_file", type=click.Path(exists=True, file_okay=True, dir_okay=False), help="Scan a specific file")
 @optgroup.option("--model", "-m", "hf_model", type=str, help='Scan a Hugging Face model by name (e.g., "bert-base-uncased")')
 
 # Download Options (relevant for --model)
-@optgroup.group("Download Options", help='Options for downloading Hugging Face models')
+@optgroup.group("Download Options", help="Options for downloading Hugging Face models")
 @optgroup.option("--download-dir", "download_dir", type=click.Path(file_okay=False, dir_okay=True), help="Directory to download HF models to (uses temp dir if not specified)")
 @optgroup.option("--full-download", "full_download", is_flag=True, help="Toggle full download of Huggingface model files")
 
 # Output Options
-@optgroup.group("Output Options", help='Options for exporting scan results')
+@optgroup.group("Output Options", help="Options for exporting scan results")
 @optgroup.option("--output-dir", "output_dir", type=click.Path(file_okay=False, dir_okay=True), help="Directory to save exported results")
 @optgroup.option("--output-format", "output_format", type=click.Choice(["pdf"]), help="Format for exported results (pdf only; no export if not specified)")
 
 def main(
-    verbose: bool, 
+    verbose: bool,
+    add_safe: Tuple[str, ...],
+    add_unsafe: Tuple[str, ...],
     scan_dir: str | None, 
     scan_file: str | None, 
     hf_model: str | None,
@@ -50,14 +59,18 @@ def main(
     if verbose:
         set_global_logging_level(logging.DEBUG)
 
+    # Update globals
+    GlobalHelper.update_globals(add_safe, "safe")
+    GlobalHelper.update_globals(add_unsafe, "unsafe")
+
     # Determine target and run scan
     if scan_dir:
         logger.info("Launching directory scan: %s", scan_dir)
-        results = PickleAnalyzer.scan_directory(scan_dir)
+        results = PickleScanner.scan_directory(scan_dir)
         print(results)
     elif scan_file:
         logger.info("Launching file scan: %s", scan_file)
-        results = PickleAnalyzer.scan_file(scan_file)
+        results = PickleScanner.scan_file(scan_file)
         print(results)
     else:
         logger.info("Launching Huggingface model scan: %s", hf_model)
@@ -85,7 +98,7 @@ def main(
             logger.error(f"Failed to download model from Huggingface: {str(e)}")
             return 1
 
-        results = PickleAnalyzer.scan_directory(download_dir)
+        results = PickleScanner.scan_directory(download_dir)
         print(results)
 
     # Exporting results if an output_format has been chosen

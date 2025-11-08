@@ -4,9 +4,9 @@ from pathlib import Path
 import pickletools
 
 from picklechecker.core.results import AnalysisResult
-from picklechecker.core.pickle_extractor import PickleExtractor
+from picklechecker.core.extractor import PickleExtractor
 
-class PickleAnalyzer:
+class PickleScanner:
 
     logger = logging.getLogger(__name__)
     
@@ -87,6 +87,7 @@ class PickleAnalyzer:
         for blob in blobs:
             cls._list_globals(blob, result)
 
+        result.compute_safety_level()
         return result
     
     @classmethod
@@ -100,6 +101,7 @@ class PickleAnalyzer:
             if file_path.is_file() and not any(part.startswith('.') for part in file_path.parts):  # Skip files in dot-directories or dot-files:
                 cls.logger.debug(f"Analyzing {file_path}...")
                 result = cls.scan_file(file_path)
+                result.compute_safety_level()
                 results.append(result)
 
         cls.logger.info(f"Scan finished for directory {dirpath}")
