@@ -29,7 +29,7 @@ class HuggingfaceClient:
         
         self.download_dir = download_dir
 
-    def download_repo(self, repo_name: str, allow_patterns: List = [], ignore_patterns: List = []) -> str:
+    def download_repo(self, repo_name: str, allow_patterns: List = [], ignore_patterns: List = []) -> None:
         """
         Downloads a complete repository snapshot from Hugging Face.
 
@@ -37,11 +37,8 @@ class HuggingfaceClient:
             repo_name (str): The repository ID on the Hugging Face Hub (e.g., 'bert-base-uncased')
             allow_patterns (list): A list of patterns to filter files to download
 
-        Returns:
-            str: The local path to the downloaded repository
-
         Raises:
-            RuntimeError: If the download fails after logging the error
+            HuggingfaceClientError: If the download fails
         """
         self.logger.info(f"Starting full repository download for: {repo_name}")
         try:
