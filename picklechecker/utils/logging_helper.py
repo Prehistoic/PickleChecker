@@ -1,8 +1,12 @@
+"""
+Utility functions for configuring logging in the application.
+"""
+
 import logging
 import sys
 
 
-def setup_logging(level=logging.INFO):
+def setup_logging(level=logging.INFO) -> None:
     """
     Sets up the global logging configuration.
 
@@ -12,12 +16,12 @@ def setup_logging(level=logging.INFO):
     Args:
         level: The minimum logging level to display for the root logger.
     """
-    # 1. Silence all annoying loggers
+    # Silence third-party loggers to reduce noise
     logging.getLogger("httpx").setLevel(logging.CRITICAL)
     logging.getLogger("httpcore").setLevel(logging.CRITICAL)
     logging.getLogger("filelock").setLevel(logging.CRITICAL)
 
-    # 2. Configuring the project root logger
+    # Configure the project root logger
     project_root_logger = logging.getLogger()
     project_root_logger.setLevel(level)
 
@@ -33,6 +37,12 @@ def setup_logging(level=logging.INFO):
         project_root_logger.addHandler(handler)
 
 
-def set_global_logging_level(level=logging.INFO):
+def set_global_logging_level(level=logging.INFO) -> None:
+    """
+    Sets the global logging level for the root logger.
+
+    Args:
+        level: The new logging level (e.g., logging.DEBUG, logging.INFO).
+    """
     project_root_logger = logging.getLogger()
     project_root_logger.setLevel(level)

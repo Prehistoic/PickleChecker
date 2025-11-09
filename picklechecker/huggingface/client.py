@@ -1,5 +1,8 @@
+"""
+Client for interacting with the Hugging Face Hub.
+"""
+
 import logging
-import tempfile
 from typing import List
 
 from huggingface_hub import snapshot_download, hf_hub_download
@@ -8,7 +11,9 @@ from picklechecker.config import HF_TOKEN, HF_ETAG_TIMEOUT
 
 
 class HuggingfaceClientError(RuntimeError):
-    """Raised for errors originating from HuggingfaceClient operations."""
+    """
+    Raised for errors originating from HuggingfaceClient operations.
+    """
 
 
 class HuggingfaceClient:
@@ -22,12 +27,15 @@ class HuggingfaceClient:
     def __init__(self, download_dir: str):
         """
         Initializes the client and prepares the local download directory.
+
+        Args:
+            download_dir (str): Directory path where downloads will be stored.
         """
         self.hf_token = HF_TOKEN
         self.etag_timeout = HF_ETAG_TIMEOUT
 
         if not self.hf_token:
-            self.logger.warning("Environment variable HF_TOKEN is not set !")
+            self.logger.warning("Environment variable HF_TOKEN is not set!")
 
         self.download_dir = download_dir
 
@@ -38,14 +46,16 @@ class HuggingfaceClient:
         Downloads a complete repository snapshot from Hugging Face.
 
         Args:
-            repo_name (str): The repository ID on the Hugging Face Hub (e.g., 'bert-base-uncased')
-            allow_patterns (list): A list of patterns to filter files to download
+            repo_name (str): The repository ID on the Hugging Face Hub (e.g., 'bert-base-uncased').
+            allow_patterns (List): List of patterns to filter files to download.
+            ignore_patterns (List): List of patterns to ignore during download.
 
         Raises:
-            HuggingfaceClientError: If the download fails
+            HuggingfaceClientError: If the download fails.
         """
         self.logger.info(f"Starting full repository download for: {repo_name}")
         try:
+            # Build parameters for snapshot_download
             params = {
                 "repo_id": repo_name,
                 "local_dir": self.download_dir,
@@ -70,17 +80,21 @@ class HuggingfaceClient:
 
     def download_file(self, repo_name: str, filename: str) -> str:
         """
-        Downloads a specific file from a Hugging Face repository
+        Downloads a specific file from a Hugging Face repository.
 
         Args:
-            repo_name (str): The repository ID on the Hub
-            filename (str): The file name to download (e.g., 'config.json')
+            repo_name (str): The repository ID on the Hub.
+            filename (str): The file name to download (e.g., 'config.json').
 
         Returns:
-            str: The local path to the downloaded file
+            str: The local path to the downloaded file.
+
+        Raises:
+            HuggingfaceClientError: If the download fails.
         """
         self.logger.info(f"Starting file download for: {repo_name}/{filename}")
         try:
+            # Build parameters for hf_hub_download
             params = {
                 "repo_id": repo_name,
                 "filename": filename,
@@ -93,7 +107,8 @@ class HuggingfaceClient:
 
             file_path = hf_hub_download(**params)
             self.logger.info(f"File {filename} successfully downloaded to: {file_path}")
+            return file_path
         except Exception as e:
             raise HuggingfaceClientError(
                 f"Failed to download file '{filename}' from '{repo_name}'"
-            ) from e
+            ) from e  # Preserve original exception chain

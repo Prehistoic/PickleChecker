@@ -1,3 +1,7 @@
+"""
+Console results formatter using Rich library for displaying scan results in the terminal.
+"""
+
 import logging
 from typing import List
 
@@ -11,13 +15,23 @@ from picklechecker.core.safety import SafetyLevel
 
 
 class ConsoleResultsFormatter:
+    """
+    Formatter class for displaying PickleChecker scan results in the console using Rich.
+    """
+
     logger = logging.getLogger(__name__)
     console = Console()
 
     @classmethod
     def safety_style(cls, level: SafetyLevel) -> str:
         """
-        Assign color based on safety level
+        Returns the Rich color style string for a given safety level.
+
+        Args:
+            level (SafetyLevel): The safety level enum value.
+
+        Returns:
+            str: The color style (e.g., "green", "yellow").
         """
         if level == SafetyLevel.INNOCUOUS:
             return "green"
@@ -31,16 +45,18 @@ class ConsoleResultsFormatter:
     @classmethod
     def _create_result_panel(cls, result: AnalysisResult) -> Panel:
         """
-        Method to create the table displaying the result for a single file
+        Creates a Rich panel displaying the scan result for a single file.
 
         Args:
-            result: AnalysisResult
+            result (AnalysisResult): The analysis result for the file.
 
         Returns:
-            Panel: rich Panel object
+            Panel: A Rich Panel containing the file result summary and global imports table.
         """
+        # Main container for the result (file name + imports table)
         result_container = Table(show_header=False, box=None, padding=0, collapse_padding=True)
 
+        # Table for global imports
         imports_table = Table(
             box=box.ROUNDED,
             show_header=True,
@@ -48,10 +64,10 @@ class ConsoleResultsFormatter:
             show_lines=True,
             expand=False,
         )
-
         imports_table.add_column("Global Import")
         imports_table.add_column("Safety Level")
 
+        # Populate the imports table
         if not result.globals_found:
             imports_table.add_row("[italic]No global imports found[/italic]", "")
         else:
@@ -59,12 +75,13 @@ class ConsoleResultsFormatter:
                 module = global_import.module
                 name = global_import.name
                 safety = global_import.safety
-
+                # Format the row with colors for safety level
                 imports_table.add_row(
                     f"[blue]{module}[/blue].[bold]{name}[/bold]",
                     f"[{cls.safety_style(safety)} bold]{safety.name}[/]",
                 )
 
+        # Add file summary and imports table to the container
         result_container.add_row(
             f"[bold]{result.source_path.name}[/bold] --> [{cls.safety_style(result.safety)}]{result.safety.name}[/]"
         )
@@ -75,15 +92,15 @@ class ConsoleResultsFormatter:
     @classmethod
     def _create_summary_panel(cls, results: List[AnalysisResult]) -> Panel:
         """
-        Method to create the summary panel to aggregate analysis results
+        Creates a Rich panel with a summary of all scan results.
 
         Args:
-            results: List of AnalysisResult
+            results (List[AnalysisResult]): List of all analysis results.
 
         Returns:
-            Panel: rich Panel object
+            Panel: A Rich Panel with aggregated statistics.
         """
-        # Compute stats to show
+        # Compute aggregate statistics from results
         total_files = len({r.source_path for r in results})
         completed_scans = sum(1 for r in results if r.status == AnalysisStatus.COMPLETED)
         partial_scans = sum(1 for r in results if r.status == AnalysisStatus.COMPLETED_WITH_ERRORS)
@@ -92,36 +109,34 @@ class ConsoleResultsFormatter:
         suspicious = sum(1 for r in results if r.safety == SafetyLevel.SUSPICIOUS)
         dangerous = sum(1 for r in results if r.safety == SafetyLevel.DANGEROUS)
 
-        # Create the main summary container
+        # Main container for summary (totals + safety stats side by side)
         summary_container = Table(show_header=False, box=None, padding=0, collapse_padding=True)
 
-        # Add totals section
+        # Table for scan status totals
         totals_table = Table(show_header=False, box=None, padding=(0, 2), collapse_padding=True)
         totals_table.add_row("Total files scanned: ", str(total_files))
         totals_table.add_row(" - Completed:", str(completed_scans))
         totals_table.add_row(" - Completed with errors: ", str(partial_scans))
         totals_table.add_row(" - Failed: ", str(failed_scans))
 
-        # Create safety_results_table table
+        # Table for safety level counts
         safety_results_table = Table(
             show_header=False, box=None, padding=(0, 2), collapse_padding=True
         )
-
         safety_results_table.add_column("Icon", style="bold", no_wrap=True)
         safety_results_table.add_column("Label", style="bold", no_wrap=True)
-        safety_results_table.add_column(
-            "Count", justify="right", no_wrap=True
-        )  # No need for ratio here
+        safety_results_table.add_column("Count", justify="right", no_wrap=True)
 
-        # Add the statistics rows
-        safety_results_table.add_row(" ")  # For better alignment with totals_table
+        # Add safety statistics rows
+        safety_results_table.add_row(" ")  # Spacer for alignment
         safety_results_table.add_row("✅", "Safe", str(safe))
         safety_results_table.add_row("⚠️", "Suspicious", str(suspicious))
         safety_results_table.add_row("❌", "Dangerous", str(dangerous))
 
-        # Combine all elements
+        # Combine totals and safety tables side by side
         summary_container.add_row(totals_table, safety_results_table)
 
+        # Wrap in a panel with title
         summary = Panel(
             summary_container, title="Summary", box=box.ROUNDED, expand=False, padding=(1, 2)
         )
@@ -129,20 +144,22 @@ class ConsoleResultsFormatter:
         return summary
 
     @classmethod
-    def display_results(cls, results: List[AnalysisResult]):
+    def display_results(cls, results: List[AnalysisResult]) -> None:
         """
-        Display scan results formatted using rich library
-        """
-        print(" ")  # Adding an empty line for spacing
+        Displays the scan results in the console using Rich formatting.
 
-        # Create a panel for each file result
+        Args:
+            results (List[AnalysisResult]): List of analysis results to display.
+        """
+        print(" ")  # Add spacing before results
+
+        # Display each file's result panel
         for result in results:
             result_panel = cls._create_result_panel(result)
             cls.console.print(result_panel)
+            print(" ")  # Add spacing between results
 
-            print(" ")  # Adding an empty line for spacing
-
-        # Create summary panel
+        # Display summary if there are results
         if results:
             summary = cls._create_summary_panel(results)
             cls.console.print(summary)

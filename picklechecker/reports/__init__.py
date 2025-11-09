@@ -12,7 +12,9 @@ from picklechecker.core.results import AnalysisResult
 
 
 class Report(ABC):
-    """Helper class for exporting scan results to different formats."""
+    """
+    Helper class for exporting scan results to different formats.
+    """
 
     logger = logging.getLogger(__name__)
 
@@ -29,23 +31,23 @@ class Report(ABC):
 
     def __init__(self, target: str, target_type: str, results: List[AnalysisResult]):
         """
-        Initiate the Report object
+        Initializes the Report object with scan details.
 
         Args:
-            target: The original scan target
-            target_type: The original scan target type (file, directory, hf_model)
-            results: List of AnalysisResult to include in the report.
+            target (str): The original scan target (e.g., file path or model name).
+            target_type (str): The type of scan target ('file', 'directory', 'hf_model').
+            results (List[AnalysisResult]): List of AnalysisResult to include in the report.
         """
         self.target = target
         self.target_type = target_type
         self.results = results
 
     @abstractmethod
-    def save(self, output_filepath: str | Path):
+    def save(self, output_filepath: str | Path) -> None:
         """
-        Class method to save the report
+        Saves the report to the specified file path.
 
         Args:
-            output_filepath: The corrected output file path.
+            output_filepath (str | Path): The path where the report will be saved.
         """
         pass

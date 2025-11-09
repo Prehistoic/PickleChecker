@@ -107,7 +107,7 @@ def main(
     download_dir: str | None,
     full_download: bool,
     output_path: str | None,
-    output_format: str | None,
+    output_format: str,
 ) -> int:
     """
     CLI entrypoint for PickleChecker
@@ -117,20 +117,18 @@ def main(
         set_global_logging_level(logging.DEBUG)
 
     # Update globals
-    GlobalHelper.update_globals(add_safe, "safe")
-    GlobalHelper.update_globals(add_unsafe, "unsafe")
+    GlobalHelper.update_globals(list(add_safe), "safe")
+    GlobalHelper.update_globals(list(add_unsafe), "unsafe")
 
     # Determine target and run scan
     if scan_dir:
         logger.info("Launching directory scan: %s", scan_dir)
         results = PickleScanner.scan_directory(scan_dir)
-        target = scan_dir
-        target_type = "dir"
+
     elif scan_file:
         logger.info("Launching file scan: %s", scan_file)
         results = [PickleScanner.scan_file(scan_file)]
-        target = scan_file
-        target_type = "file"
+
     else:
         logger.info("Launching Huggingface model scan: %s", hf_model)
 
@@ -145,28 +143,27 @@ def main(
         try:
             hf_client = HuggingfaceClient(download_dir)
 
-            params = {"repo_name": hf_model}
-            if not full_download:
-                params["allow_patterns"] = HF_ALLOW_PATTERNS
-                params["ignore_patterns"] = HF_IGNORE_PATTERNS
-
-            hf_client.download_repo(**params)
+            hf_client.download_repo(
+                repo_name=hf_model,
+                allow_patterns=HF_ALLOW_PATTERNS if not full_download else None,
+                ignore_patterns=HF_IGNORE_PATTERNS if not full_download else None,
+            )
         except HuggingfaceClientError as e:
             logger.error(f"Failed to download model from Huggingface: {str(e)}")
             return 1
 
         results = PickleScanner.scan_directory(download_dir)
-        target = hf_model
-        target_type = "hf"
 
-    # Exporting results if an output_format has been chosen
-    if output_path is None:
-        logger.info("No output path specified. Skipping export...")
+    target = scan_dir or scan_file or hf_model
+    target_type = "dir" if scan_dir else "file" if scan_file else "hf"
 
-    else:
+    # Exporting results if an output_path has been chosen
+    if output_path:
         logger.info(f"Launching {output_format.upper()} export...")
         handler = ReportHandler(output_path, output_format)
         handler.save_report(target, target_type, results)
+    else:
+        logger.info("No output path specified. Skipping export...")
 
     # Displaying results to console
     ConsoleResultsFormatter.display_results(results)

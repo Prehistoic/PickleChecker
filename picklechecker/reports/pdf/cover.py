@@ -1,10 +1,14 @@
+"""
+Module for building the cover page of PDF reports.
+"""
+
 from typing import List, Dict
 from pathlib import Path
 from datetime import datetime
 
-from reportlab.lib import colors
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.platypus import (
+from reportlab.lib import colors  # type: ignore
+from reportlab.lib.styles import ParagraphStyle  # type: ignore
+from reportlab.platypus import (  # type: ignore
     SimpleDocTemplate,
     Paragraph,
     Spacer,
@@ -20,6 +24,10 @@ from picklechecker.core.safety import SafetyLevel
 
 
 class PdfCover:
+    """
+    Class for constructing the cover page elements of a PDF report.
+    """
+
     @classmethod
     def build_cover(
         cls,
@@ -30,7 +38,20 @@ class PdfCover:
         target_type: str | None,
         results: List[AnalysisResult],
     ) -> List[Flowable]:
-        """Builds the cover page flowables, including title, target, and summary."""
+        """
+        Builds the cover page flowables, including title, target, and summary.
+
+        Args:
+            doc (SimpleDocTemplate): The PDF document template.
+            custom_styles (Dict[str, ParagraphStyle]): Custom paragraph styles.
+            custom_colors (Dict[str, colors.Color]): Custom colors.
+            target (str | None): The scan target (e.g., file or directory path).
+            target_type (str | None): The type of target (e.g., 'dir', 'file').
+            results (List[AnalysisResult]): The scan results to summarize.
+
+        Returns:
+            List[Flowable]: List of flowables for the cover page.
+        """
         story = []
 
         # Big black-grey block with project name
@@ -60,7 +81,7 @@ class PdfCover:
         )
         story.append(Spacer(1, 30))
 
-        # Draw icon
+        # Draw icon based on target type
         if target_type in ("dir", "file", "hf"):
             icon = PdfIcons(target_type, size=36)
             icon_table = Table([[icon]], colWidths=[doc.width])
@@ -68,7 +89,7 @@ class PdfCover:
             story.append(icon_table)
             story.append(Spacer(1, 8))
 
-        # Format directory target to look nice
+        # Format directory target to look nice (remove leading dots, use backslashes)
         display_target = target
         try:
             if target and target_type == "dir":
@@ -83,7 +104,7 @@ class PdfCover:
 
         story.append(Spacer(1, 60))
 
-        # Build summary values
+        # Compute summary statistics from results
         total_files = len({r.source_path for r in results})
         completed_scans = sum(1 for r in results if r.status == AnalysisStatus.COMPLETED)
         partial_scans = sum(1 for r in results if r.status == AnalysisStatus.COMPLETED_WITH_ERRORS)
@@ -129,7 +150,7 @@ class PdfCover:
         story.append(totals_wrapper)
         story.append(Spacer(1, 30))
 
-        # Status summary table (colored)
+        # Status summary table (colored) with headers and values
         safety_results_headers = [
             Paragraph("<b>Safe</b>", custom_styles["value_bold_center"]),
             Paragraph("<b>Suspicious</b>", custom_styles["value_bold_center"]),

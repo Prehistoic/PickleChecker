@@ -16,7 +16,7 @@ sizeFileHeader = struct.calcsize(structFileHeader)
 
 
 class RelaxedZipFile(zipfile.ZipFile):
-    def open(self, name, mode="r", pwd=None, *, force_zip64=False):
+    def open(self, name, mode="r", pwd=None, *, force_zip64=False) -> None:
         """Return file-like object for 'name'.
 
         name is a string for the file name within the ZIP file, or a ZipInfo

@@ -3,7 +3,7 @@ Displaying a nice looking ASCII banner :)
 """
 
 
-def display_banner():
+def display_banner() -> None:
     print(
         r"""        
                 ____  _      __   __     ______                __             

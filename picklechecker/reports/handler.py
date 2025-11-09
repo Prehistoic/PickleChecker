@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Any
 import logging
 
 from picklechecker.reports.pdf import PdfReport
@@ -33,7 +33,7 @@ class ReportHandler:
         self.final_path = self._determine_final_path()
         self.directory = Path(self.final_path).parent
 
-    def _get_report_class(self):
+    def _get_report_class(self) -> Any:
         """
         Retrieves the correct Report class from the map.
 
@@ -72,7 +72,7 @@ class ReportHandler:
 
         return self.user_path
 
-    def _ensure_directory_exists(self):
+    def _ensure_directory_exists(self) -> None:
         """
         Creates the directory non-recursively, failing if parent is missing.
 
@@ -94,7 +94,7 @@ class ReportHandler:
             # Handle other errors like permission issues
             raise RuntimeError(f"Failed to create directory '{self.directory}': {e}")
 
-    def save_report(self, target: str, target_type: str, results: List[AnalysisResult]):
+    def save_report(self, target: str, target_type: str, results: List[AnalysisResult]) -> None:
         """
         Executes the file saving process.
 
