@@ -5,13 +5,10 @@ A security analysis tool for scanning Python pickle files and ML models for pote
 ## Features ✨
 
 - 🔍 Multi-engine scanning
-- 📁 Support for directory, file, and HuggingFace model scanning  
+- 📁 Support for directory, file, and HuggingFace model scanning
 - 🎯 Detection of unsafe imports and malicious code patterns
-
-### Supported Scanners
-- [Fickling](https://github.com/trailofbits/fickling)
-- [Picklescan](https://github.com/mmaitre314/picklescan)
-- [Modelscan](https://github.com/protectai/modelscan)
+- 🔧 Support for adding your own whitelisted/blacklisted global imports
+- 📄 Export scan results to PDF reports
 
 ## Installation 🖥️
 
@@ -20,27 +17,36 @@ A security analysis tool for scanning Python pickle files and ML models for pote
 git clone https://github.com/Prehistoic/PickleChecker.git
 cd picklechecker
 
-# Install dependencies
-pip install -r requirements.txt
+# Install picklechecker
+pip install .
 ```
 
 > [!IMPORTANT]
-> Make sure to copy `.env.template` to `.env` and update `HF_TOKEN` with an Access Token generated from [HuggingFace](https://huggingface.co/settings/tokens)
+> Make sure to copy `.env.template` to `.env` and update `HF_TOKEN` with an Access Token generated from [HuggingFace](https://huggingface.co/settings/tokens) if you wish to scan gatekept models.
 
 ## Usage 🚀
 
 ```bash
 # Scan a single file
-python picklechecker.py --file path/to/pickle.pkl
+picklechecker --file path/to/pickle.pkl
 
 # Scan a directory
-python picklechecker.py --directory path/to/model/dir
+picklechecker --directory path/to/model/dir
 
 # Scan a HuggingFace model
-python picklechecker.py --model "organization/model-name"
+picklechecker --model "organization/model-name"
 
 # Enable verbose output
-python picklechecker.py -v --file path/to/pickle.pkl
+picklechecker -v --file path/to/pickle.pkl
+
+# Export to PDF
+picklechecker --file path/to/pickle.pkl --output result.pdf --format pdf
+
+# Add safe globals (module:name or JSON file)
+picklechecker --file path/to/pickle.pkl --add-safe os:path --add-safe /path/to/safe.json
+
+# Add unsafe globals
+picklechecker --directory /path --add-unsafe subprocess:call
 ```
 
 ## Contributing 🚧
