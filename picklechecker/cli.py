@@ -12,6 +12,7 @@ from picklechecker.huggingface.client import HuggingfaceClient, HuggingfaceClien
 from picklechecker.core.scanner import PickleScanner
 from picklechecker.core.globals import GlobalHelper
 from picklechecker.console.formatter import ConsoleResultsFormatter
+from picklechecker.reports.handler import ReportHandler
 from picklechecker.config import HF_ALLOW_PATTERNS, HF_IGNORE_PATTERNS
 
 logger = logging.getLogger(__name__)
@@ -84,16 +85,17 @@ logger = logging.getLogger(__name__)
 # Output Options
 @optgroup.group("Output Options", help="Options for exporting scan results")
 @optgroup.option(
-    "--output-dir",
-    "output_dir",
-    type=click.Path(file_okay=False, dir_okay=True),
-    help="Directory to save exported results",
+    "--output",
+    "output_path",
+    type=click.Path(file_okay=True, dir_okay=False),
+    help="Path where results should be saved (no export if not specified)",
 )
 @optgroup.option(
-    "--output-format",
+    "--format",
     "output_format",
     type=click.Choice(["pdf"]),
-    help="Format for exported results (pdf only; no export if not specified)",
+    default="pdf",
+    help="Format for exported results (default=pdf)",
 )
 def main(
     verbose: bool,
@@ -104,7 +106,7 @@ def main(
     hf_model: str | None,
     download_dir: str | None,
     full_download: bool,
-    output_dir: str | None,
+    output_path: str | None,
     output_format: str | None,
 ) -> int:
     """
@@ -122,9 +124,13 @@ def main(
     if scan_dir:
         logger.info("Launching directory scan: %s", scan_dir)
         results = PickleScanner.scan_directory(scan_dir)
+        target = scan_dir
+        target_type = "dir"
     elif scan_file:
         logger.info("Launching file scan: %s", scan_file)
         results = [PickleScanner.scan_file(scan_file)]
+        target = scan_file
+        target_type = "file"
     else:
         logger.info("Launching Huggingface model scan: %s", hf_model)
 
@@ -150,13 +156,17 @@ def main(
             return 1
 
         results = PickleScanner.scan_directory(download_dir)
+        target = hf_model
+        target_type = "hf"
 
     # Exporting results if an output_format has been chosen
-    if output_format is None:
-        logger.info("No output format specified. Skipping export...")
+    if output_path is None:
+        logger.info("No output path specified. Skipping export...")
 
-    elif output_format == "pdf":
-        logger.info("Launching export to PDF")
+    else:
+        logger.info(f"Launching {output_format.upper()} export...")
+        handler = ReportHandler(output_path, output_format)
+        handler.save_report(target, target_type, results)
 
     # Displaying results to console
     ConsoleResultsFormatter.display_results(results)
