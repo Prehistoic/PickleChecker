@@ -10,8 +10,7 @@ from reportlab.platypus import SimpleDocTemplate  # type: ignore
 from picklechecker.reports import Report
 from picklechecker.reports.pdf.styles import PdfStyles
 from picklechecker.reports.pdf.cover import PdfCover
-
-# from picklechecker.reports.pdf.details import PdfDetails
+from picklechecker.reports.pdf.details import PdfDetails
 
 
 class PdfReport(Report):
@@ -50,11 +49,11 @@ class PdfReport(Report):
             )
         )
 
-        # TODO: Build detail pages for individual file results
-        """story.extend(PdfDetails.build_detail_pages(
+        # Build detail pages for individual file results
+        story.extend(PdfDetails.build_detail_pages(
             doc, custom_styles, custom_colors,
             self.results
-        ))"""
+        ))
 
         # Generate the PDF document
         doc.build(story)
