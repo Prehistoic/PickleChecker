@@ -125,4 +125,6 @@ class GlobalHelper:
                 except ValueError:
                     cls.logger.error(f"Invalid format for --add-{label}: {item}. Use 'module:name'")
                 except Exception as e:
-                    cls.logger.error(f"Unknown error when adding new global {item}: {str(e)}", exc_info=True)
+                    cls.logger.error(
+                        f"Unknown error when adding new global {item}: {str(e)}", exc_info=True
+                    )

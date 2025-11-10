@@ -50,10 +50,7 @@ class PdfReport(Report):
         )
 
         # Build detail pages for individual file results
-        story.extend(PdfDetails.build_detail_pages(
-            doc, custom_styles, custom_colors,
-            self.results
-        ))
+        story.extend(PdfDetails.build_detail_pages(doc, custom_styles, custom_colors, self.results))
 
         # Generate the PDF document
         doc.build(story)

@@ -8,7 +8,13 @@ from typing import List, Dict, Any
 from enum import Enum
 
 from picklechecker.core.safety import SafetyLevel
-from picklechecker.core.globals import SAFE_GLOBALS, UNSAFE_GLOBALS, RUNTIME_SAFE_GLOBALS, RUNTIME_UNSAFE_GLOBALS, GlobalReference
+from picklechecker.core.globals import (
+    SAFE_GLOBALS,
+    UNSAFE_GLOBALS,
+    RUNTIME_SAFE_GLOBALS,
+    RUNTIME_UNSAFE_GLOBALS,
+    GlobalReference,
+)
 
 
 class AnalysisStatus(Enum):
@@ -57,6 +63,7 @@ class AnalysisResult:
             opcode (str): The pickle opcode.
             line (int): The line/index in the stream.
         """
+
         def is_in_globals(mod: str, nm: str, globals_dict: dict[str, list[str]]) -> bool:
             for key, values in globals_dict.items():
                 if mod == key or mod.startswith(key + "."):
