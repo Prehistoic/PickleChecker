@@ -40,6 +40,7 @@ class PickleScanner:
                 ops.append(op)
         except Exception as e:
             cls.logger.warning(f"Error while parsing pickle: {e}")
+            result.errors.append(f"Pickle parsing error: {str(e)}")
             got_an_error = True
 
         memo: dict[int, Any] = {}
@@ -132,6 +133,12 @@ class PickleScanner:
             cls.logger.error(
                 f"Failed to extract pickles from {target_filepath}: {str(e)}", exc_info=True
             )
+            result.errors.append(f"Extraction failed: {str(e)}")
+            result.status = AnalysisStatus.FAILED
+            return result
+
+        if not blobs:
+            result.errors.append("No pickle streams found in the file.")
             result.status = AnalysisStatus.FAILED
             return result
 
@@ -142,6 +149,7 @@ class PickleScanner:
                 cls.logger.error(
                     f"Failed to list globals for blob in {target_filepath}: {str(e)}", exc_info=True
                 )
+                result.errors.append(f"Global listing failed for a blob: {str(e)}")
                 result.status = AnalysisStatus.FAILED
                 return result
 

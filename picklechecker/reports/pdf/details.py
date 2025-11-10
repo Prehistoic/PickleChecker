@@ -48,11 +48,12 @@ class PdfDetails:
         status_text = f"Scan Status: <font color='{status_color}' size='10'>{result.status.name}</font>"
         block_story.append(Paragraph(status_text, custom_styles["block_header"]))
         
-        # If failed, show errors
-        if result.status == AnalysisStatus.FAILED and result.errors:
-            error_text = "<i>Errors:</i><br/>" + "<br/>".join(result.errors)
-            block_story.append(Paragraph(error_text, custom_styles["details_value"]))
+        # If there was any, show errors
+        if result.errors:
             block_story.append(Spacer(1, 6))
+            error_text = "<br/>".join([f"<i> - {error}</i>" for error in result.errors])
+            block_story.append(Paragraph(error_text, custom_styles["details_value"]))
+            block_story.append(Spacer(1, 4))
         
         return block_story
 

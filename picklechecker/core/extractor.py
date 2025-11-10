@@ -2,7 +2,7 @@
 Utility class for extracting pickled streams from various file formats.
 """
 
-from typing import IO, List, Optional, BinaryIO
+from typing import IO, List, Optional
 from pathlib import Path
 import numpy as np
 from tarfile import TarError
