@@ -4,7 +4,6 @@ A security analysis tool for scanning Python pickle files and ML models for pote
 
 ## Features ✨
 
-- 🔍 Multi-engine scanning
 - 📁 Support for directory, file, and HuggingFace model scanning
 - 🎯 Detection of unsafe imports and malicious code patterns
 - 🔧 Support for adding your own whitelisted/blacklisted global imports
@@ -52,6 +51,14 @@ picklechecker --directory /path --add-unsafe subprocess:call
 ## Contributing 🚧
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Credits ⭐
+
+This project was heavily inspired by existing pickle scanners. However as not all of them were supporting all formats I needed for my use case I decided to create my own scanner while using logics and whitelists/blacklists of global imports from each of them !
+
+- [Fickling](https://github.com/trailofbits/fickling/tree/master)
+- mmaitre314's [Picklescan](https://github.com/mmaitre314/picklescan/tree/main)
+- Protect AI's [Modelscan](https://github.com/protectai/modelscan/tree/main)
 
 ## License 📃
 
