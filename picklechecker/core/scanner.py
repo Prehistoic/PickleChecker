@@ -79,7 +79,7 @@ class PickleScanner:
                         continue
                     if prev_name in ["GET", "BINGET", "LONG_BINGET"]:
                         values.append(
-                            memo.get(int(prev_op[1]) if prev_op[1] is not None else 0, "unknown")
+                            memo.get(int(prev_op[1]) if prev_op[1] is not None else 0, "<unknown>")
                         )
                     elif prev_name not in [
                         "SHORT_BINUNICODE",
@@ -90,9 +90,9 @@ class PickleScanner:
                         "BINSTRING",
                         "SHORT_BINSTRING",
                     ]:
-                        values.append("unknown")
+                        values.append("<unknown>")
                     else:
-                        values.append(prev_op[1] if prev_op[1] is not None else "unknown")
+                        values.append(prev_op[1] if prev_op[1] is not None else "<unknown>")
                     if len(values) == 2:
                         break
                 if len(values) != 2:
@@ -101,8 +101,8 @@ class PickleScanner:
                     )
                     continue
                 module, name = (
-                    values[1] if values[1] is not None else "unknown",
-                    values[0] if values[0] is not None else "unknown",
+                    values[1] if values[1] is not None else "<unknown>",
+                    values[0] if values[0] is not None else "<unknown>",
                 )
                 globals_set.add((module, name))
                 result.add_global(module, name, "STACK_GLOBAL", n)

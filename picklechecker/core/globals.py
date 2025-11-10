@@ -97,8 +97,9 @@ class GlobalHelper:
                     # Merge the loaded data
                     for module, names in data.items():
                         if module not in globals_dict:
-                            globals_dict[module] = {}
-                        globals_dict[module].update(names)
+                            globals_dict[module] = []
+
+                        globals_dict[module].extend(names)
 
                     cls.logger.info(f"Loaded {label} globals from {item}")
 
@@ -111,9 +112,12 @@ class GlobalHelper:
                     module, name = item.split(":", 1)
 
                     if module not in globals_dict:
-                        globals_dict[module] = {}
-                    globals_dict[module][name] = True
+                        globals_dict[module] = []
+
+                    globals_dict[module].append(name)
 
                     cls.logger.info(f"Added {module}:{name} to {label} globals")
                 except ValueError:
                     cls.logger.error(f"Invalid format for --add-{label}: {item}. Use 'module:name'")
+                except Exception as e:
+                    cls.logger.error(f"Unknown error when adding new gloabl {item} : {str(e)}", exc_info=True)

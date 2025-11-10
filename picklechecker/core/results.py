@@ -47,7 +47,8 @@ class AnalysisResult:
         """
         Adds a global reference to the result and determines its safety level.
 
-        Safety priority: DANGEROUS if in UNSAFE_GLOBALS, INNOCUOUS if in SAFE_GLOBALS, else SUSPICIOUS.
+        Safety priority: DANGEROUS if in UNSAFE_GLOBALS (either whole module "*" or specific name), 
+        INNOCUOUS if in SAFE_GLOBALS (either whole module "*" or specific name), else SUSPICIOUS.
 
         Args:
             module (str): The module name.
@@ -55,12 +56,23 @@ class AnalysisResult:
             opcode (str): The pickle opcode.
             line (int): The line/index in the stream.
         """
-        # Check for dangerous globals first (highest priority)
-        if module in UNSAFE_GLOBALS and name in UNSAFE_GLOBALS[module]:
+        # If module or name == <unknown> we must assume it is RCE
+        if module == "<unknown>" or name == "<unknown>":
             safety = SafetyLevel.DANGEROUS
+        # Else check for dangerous globals
+        elif module in UNSAFE_GLOBALS:
+            unsafe_entry = UNSAFE_GLOBALS[module]
+            if unsafe_entry == ["*"] or name in unsafe_entry:
+                safety = SafetyLevel.DANGEROUS
+            else:
+                safety = SafetyLevel.SUSPICIOUS
         # Then check for safe globals
-        elif module in SAFE_GLOBALS and name in SAFE_GLOBALS[module]:
-            safety = SafetyLevel.INNOCUOUS
+        elif module in SAFE_GLOBALS:
+            safe_entry = SAFE_GLOBALS[module]
+            if safe_entry == ["*"] or name in safe_entry:
+                safety = SafetyLevel.INNOCUOUS
+            else:
+                safety = SafetyLevel.SUSPICIOUS
         else:
             # Default to suspicious if not explicitly listed
             safety = SafetyLevel.SUSPICIOUS
