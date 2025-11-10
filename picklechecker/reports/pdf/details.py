@@ -174,11 +174,11 @@ class PdfDetails:
             
             # Safety block (moved first)
             story.extend(cls._build_safety_block(doc, custom_styles, custom_colors, result))
-            story.append(Spacer(1, 12))
+            story.append(Spacer(1, 18))
             
             # Status block (moved after safety)
             story.extend(cls._build_status_block(doc, custom_styles, custom_colors, result))
-            story.append(Spacer(1, 24))
+            story.append(Spacer(1, 18))
             
             # Globals table
             story.extend(cls._build_globals_table(doc, custom_styles, custom_colors, result))
