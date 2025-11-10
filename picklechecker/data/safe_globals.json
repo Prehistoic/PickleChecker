@@ -1,0 +1,33 @@
+{
+    "collections": ["OrderedDict"],
+    "numpy": [
+        "dtype",
+        "ndarray"
+    ],
+    "numpy._core.multiarray": [
+        "_reconstruct"
+    ],
+    "numpy.core.multiarray": [
+        "_reconstruct"
+    ],
+    "torch": [
+        "LongStorage",
+        "FloatStorage",
+        "HalfStorage",
+        "QUInt2x4Storage",
+        "QUInt4x2Storage",
+        "QInt32Storage",
+        "QInt8Storage",
+        "QUInt8Storage",
+        "ComplexFloatStorage",
+        "ComplexDoubleStorage",
+        "DoubleStorage",
+        "BFloat16Storage",
+        "BoolStorage",
+        "CharStorage",
+        "ShortStorage",
+        "IntStorage",
+        "ByteStorage"
+    ],
+    "torch._utils": ["_rebuild_tensor_v2"]
+}
