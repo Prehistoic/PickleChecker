@@ -36,6 +36,10 @@ except json.JSONDecodeError as e:
     logging.error(f"Error loading UNSAFE_GLOBALS: {e}. Using empty dict.")
     UNSAFE_GLOBALS = {}
 
+# Runtime-added globals (checked first)
+RUNTIME_SAFE_GLOBALS: dict[str, list[str]] = {}
+RUNTIME_UNSAFE_GLOBALS: dict[str, list[str]] = {}
+
 
 @dataclass
 class GlobalReference:
@@ -67,7 +71,8 @@ class GlobalHelper:
     @classmethod
     def update_globals(cls, items: List[str], label: str) -> None:
         """
-        Updates the global safety dictionaries with new entries from strings or JSON files.
+        Updates the runtime global safety dictionaries with new entries from strings or JSON files.
+        These are checked first before the static JSON-loaded globals.
 
         Args:
             items (List[str]): List of items to add, either 'module:name' strings or JSON file paths.
@@ -84,8 +89,8 @@ class GlobalHelper:
             cls.logger.error(f"Unknown label {label}. Skipping globals update...")
             return
 
-        # Select the appropriate globals dictionary
-        globals_dict = UNSAFE_GLOBALS if label == "unsafe" else SAFE_GLOBALS
+        # Select the appropriate runtime globals dictionary
+        globals_dict = RUNTIME_UNSAFE_GLOBALS if label == "unsafe" else RUNTIME_SAFE_GLOBALS
 
         for item in items:
             if os.path.isfile(item):
@@ -120,4 +125,4 @@ class GlobalHelper:
                 except ValueError:
                     cls.logger.error(f"Invalid format for --add-{label}: {item}. Use 'module:name'")
                 except Exception as e:
-                    cls.logger.error(f"Unknown error when adding new gloabl {item} : {str(e)}", exc_info=True)
+                    cls.logger.error(f"Unknown error when adding new global {item}: {str(e)}", exc_info=True)

@@ -8,7 +8,7 @@ from typing import List, Dict, Any
 from enum import Enum
 
 from picklechecker.core.safety import SafetyLevel
-from picklechecker.core.globals import SAFE_GLOBALS, UNSAFE_GLOBALS, GlobalReference
+from picklechecker.core.globals import SAFE_GLOBALS, UNSAFE_GLOBALS, RUNTIME_SAFE_GLOBALS, RUNTIME_UNSAFE_GLOBALS, GlobalReference
 
 
 class AnalysisStatus(Enum):
@@ -47,8 +47,9 @@ class AnalysisResult:
         """
         Adds a global reference to the result and determines its safety level.
 
-        Safety priority: DANGEROUS if in UNSAFE_GLOBALS (either whole module "*" or specific name), 
-        INNOCUOUS if in SAFE_GLOBALS (either whole module "*" or specific name), else SUSPICIOUS.
+        Safety priority: RUNTIME_UNSAFE_GLOBALS > RUNTIME_SAFE_GLOBALS > UNSAFE_GLOBALS > SAFE_GLOBALS
+
+        Checks for module prefixes (e.g., if 'posix' is unsafe, 'posix.toto' is also unsafe).
 
         Args:
             module (str): The module name.
@@ -56,23 +57,28 @@ class AnalysisResult:
             opcode (str): The pickle opcode.
             line (int): The line/index in the stream.
         """
+        def is_in_globals(mod: str, nm: str, globals_dict: dict[str, list[str]]) -> bool:
+            for key, values in globals_dict.items():
+                if mod == key or mod.startswith(key + "."):
+                    if "*" in values or nm in values:
+                        return True
+            return False
+
         # If module or name == <unknown> we must assume it is RCE
         if module == "<unknown>" or name == "<unknown>":
             safety = SafetyLevel.DANGEROUS
-        # Else check for dangerous globals
-        elif module in UNSAFE_GLOBALS:
-            unsafe_entry = UNSAFE_GLOBALS[module]
-            if unsafe_entry == ["*"] or name in unsafe_entry:
-                safety = SafetyLevel.DANGEROUS
-            else:
-                safety = SafetyLevel.SUSPICIOUS
-        # Then check for safe globals
-        elif module in SAFE_GLOBALS:
-            safe_entry = SAFE_GLOBALS[module]
-            if safe_entry == ["*"] or name in safe_entry:
-                safety = SafetyLevel.INNOCUOUS
-            else:
-                safety = SafetyLevel.SUSPICIOUS
+        # Check runtime unsafe globals first (highest priority)
+        elif is_in_globals(module, name, RUNTIME_UNSAFE_GLOBALS):
+            safety = SafetyLevel.DANGEROUS
+        # Check runtime safe globals
+        elif is_in_globals(module, name, RUNTIME_SAFE_GLOBALS):
+            safety = SafetyLevel.INNOCUOUS
+        # Check static unsafe globals
+        elif is_in_globals(module, name, UNSAFE_GLOBALS):
+            safety = SafetyLevel.DANGEROUS
+        # Check static safe globals
+        elif is_in_globals(module, name, SAFE_GLOBALS):
+            safety = SafetyLevel.INNOCUOUS
         else:
             # Default to suspicious if not explicitly listed
             safety = SafetyLevel.SUSPICIOUS
