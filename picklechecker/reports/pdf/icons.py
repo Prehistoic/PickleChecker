@@ -27,11 +27,11 @@ class PdfIcons(Flowable):
         self.size = size
         self.width = size
         self.height = size
-        
+
         # Get path to icon image
         icons_dir = Path(__file__).parent.parent.parent / "data" / "icons"
         self.icon_path = icons_dir / f"{icon_type}.png"
-        
+
         # Check if image exists
         if not self.icon_path.exists():
             self.icon_path = None
@@ -51,14 +51,14 @@ class PdfIcons(Flowable):
         Draws the icon from an image file.
         """
         from reportlab.lib.utils import ImageReader
-        
+
         c = self.canv
         s = self.size
-        
+
         try:
             img = ImageReader(str(self.icon_path))
             # Draw image scaled to exactly the icon size
-            c.drawImage(img, 0, 0, width=s, height=s, preserveAspectRatio=True, mask='auto')
+            c.drawImage(img, 0, 0, width=s, height=s, preserveAspectRatio=True, mask="auto")
         except Exception:
             # If image loading fails, fall back to vector drawing
             self._draw_vector()
