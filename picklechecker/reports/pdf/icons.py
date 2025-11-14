@@ -1,15 +1,17 @@
 """
-Module for drawing vector icons in PDF reports.
+Module for loading and displaying icons in PDF reports.
 """
 
+from pathlib import Path
 from reportlab.lib import colors  # type: ignore
 from reportlab.platypus import Flowable  # type: ignore
 
 
 class PdfIcons(Flowable):
     """
-    Small vector icon drawn directly on the PDF canvas to avoid emoji/font issues.
-    icon_type: 'dir' | 'file' | 'hf' | 'gear' | 'download'
+    Icon displayed from image files stored in the data/icons/ directory.
+    Falls back to vector drawing if image not found.
+    icon_type: 'dir' | 'file' | 'hf'
     """
 
     def __init__(self, icon_type: str, size: int = 36):
@@ -17,7 +19,7 @@ class PdfIcons(Flowable):
         Initializes the icon with type and size.
 
         Args:
-            icon_type (str): The type of icon ('dir', 'file', 'hf', 'gear', 'download').
+            icon_type (str): The type of icon ('dir', 'file', 'hf').
             size (int): The size of the icon in points.
         """
         super().__init__()
@@ -25,10 +27,45 @@ class PdfIcons(Flowable):
         self.size = size
         self.width = size
         self.height = size
+        
+        # Get path to icon image
+        icons_dir = Path(__file__).parent.parent.parent / "data" / "icons"
+        self.icon_path = icons_dir / f"{icon_type}.png"
+        
+        # Check if image exists
+        if not self.icon_path.exists():
+            self.icon_path = None
 
     def draw(self) -> None:
         """
-        Draws the icon on the PDF canvas based on the icon_type.
+        Draws the icon on the PDF canvas.
+        Uses image if available, otherwise falls back to vector drawing.
+        """
+        if self.icon_path:
+            self._draw_image()
+        else:
+            self._draw_vector()
+
+    def _draw_image(self) -> None:
+        """
+        Draws the icon from an image file.
+        """
+        from reportlab.lib.utils import ImageReader
+        
+        c = self.canv
+        s = self.size
+        
+        try:
+            img = ImageReader(str(self.icon_path))
+            # Draw image scaled to exactly the icon size
+            c.drawImage(img, 0, 0, width=s, height=s, preserveAspectRatio=True, mask='auto')
+        except Exception:
+            # If image loading fails, fall back to vector drawing
+            self._draw_vector()
+
+    def _draw_vector(self) -> None:
+        """
+        Draws the icon as vector graphics (fallback).
         """
         c = self.canv
         s = self.size
@@ -75,38 +112,3 @@ class PdfIcons(Flowable):
             c.setStrokeColor(colors.HexColor("#5D4037"))
             c.setLineWidth(1.5)
             c.arc(s * -0.05, s * 0.25, s * 0.75, s * 0.75, startAng=200, extent=140)
-
-        # Simple gear icon (for Scanner Results header)
-        elif self.icon_type == "gear":
-            # Central circle
-            c.setStrokeColor(colors.HexColor("#444444"))
-            c.setFillColor(colors.HexColor("#CCCCCC"))
-            c.circle(s * 0.5, s * 0.5, s * 0.18, stroke=1, fill=1)
-            # Teeth as rotated rectangles
-            for i in range(8):
-                angle = i * 45
-                c.saveState()
-                c.translate(s * 0.5, s * 0.5)
-                c.rotate(angle)
-                c.rect(s * 0.28, -s * 0.03, s * 0.08, s * 0.06, stroke=0, fill=1)
-                c.restoreState()
-            # Outer circle
-            c.setStrokeColor(colors.HexColor("#666666"))
-            c.circle(s * 0.5, s * 0.5, s * 0.22, stroke=1, fill=0)
-
-        # Simple download icon (for Global Imports header)
-        elif self.icon_type == "download":
-            # Box
-            c.setStrokeColor(colors.HexColor("#444444"))
-            c.setFillColor(colors.HexColor("#CCCCCC"))
-            c.rect(s * 0.1, s * 0.25, s * 0.8, s * 0.5, stroke=1, fill=1)
-            # Arrow stem
-            c.setFillColor(colors.HexColor("#444444"))
-            c.rect(s * 0.45, s * 0.55, s * 0.1, s * 0.18, stroke=0, fill=1)
-            # Arrow head (triangle)
-            p = c.beginPath()
-            p.moveTo(s * 0.35, s * 0.55)
-            p.lineTo(s * 0.65, s * 0.55)
-            p.lineTo(s * 0.5, s * 0.35)
-            p.close()
-            c.drawPath(p, stroke=0, fill=1)
