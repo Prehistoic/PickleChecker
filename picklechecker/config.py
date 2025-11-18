@@ -21,7 +21,7 @@ DOWNLOADS_DIR = ARTIFACTS_DIR / "downloads"
 # Files and directories to skip
 EXCLUDE_FILES = {}
 EXCLUDE_DIRECTORIES = {
-    ".cache", # cache directory when downloading HF models
+    ".cache",  # cache directory when downloading HF models
 }
 
 # Pickle files extensions

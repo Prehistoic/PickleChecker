@@ -13,6 +13,7 @@ from picklechecker.core.extractor import PickleExtractor
 
 from picklechecker.config import EXCLUDE_FILES, EXCLUDE_DIRECTORIES
 
+
 class PickleScanner:
     """
     Scanner class for analyzing pickle files and extracting global references.
@@ -21,7 +22,9 @@ class PickleScanner:
     logger = logging.getLogger(__name__)
 
     @classmethod
-    def _list_globals(cls, data: IO[bytes], result: AnalysisResult, multiple_pickles: bool = True) -> None:
+    def _list_globals(
+        cls, data: IO[bytes], result: AnalysisResult, multiple_pickles: bool = True
+    ) -> None:
         """
         Parses pickle opcodes from the data stream and extracts global references.
 
@@ -39,7 +42,6 @@ class PickleScanner:
         last_byte = b"dummy"
 
         while last_byte != b"":
-
             # Attempt to parse all opcodes; continue even if errors occur
             ops = []
             try:
@@ -85,7 +87,9 @@ class PickleScanner:
                             continue
                         if prev_name in ["GET", "BINGET", "LONG_BINGET"]:
                             values.append(
-                                memo.get(int(prev_op[1]) if prev_op[1] is not None else 0, "<unknown>")
+                                memo.get(
+                                    int(prev_op[1]) if prev_op[1] is not None else 0, "<unknown>"
+                                )
                             )
                         elif prev_name not in [
                             "SHORT_BINUNICODE",
@@ -117,7 +121,9 @@ class PickleScanner:
                 break
 
     @classmethod
-    def _disassemble_pickle(cls, data: IO[bytes], result: AnalysisResult, multiple_pickles: bool = True) -> None:
+    def _disassemble_pickle(
+        cls, data: IO[bytes], result: AnalysisResult, multiple_pickles: bool = True
+    ) -> None:
         """
         Disassembles pickle data into human-readable opcodes.
 
@@ -130,7 +136,6 @@ class PickleScanner:
         last_byte = b"dummy"
 
         while last_byte != b"":
-
             # Attempt to disassemble all streams; continue even if errors occur
             output = io.StringIO()
             try:
@@ -162,11 +167,11 @@ class PickleScanner:
         # Check if filename is in EXCLUDE_FILES
         if path.name in EXCLUDE_FILES:
             return True
-        
+
         # Check if any directory in the path is in EXCLUDE_DIRECTORIES
         if any(part in EXCLUDE_DIRECTORIES for part in path.parts):
             return True
-        
+
         return False
 
     @classmethod
@@ -218,8 +223,10 @@ class PickleScanner:
                 result.errors.append(f"Global listing failed for a blob: {str(e)}")
                 result.status = AnalysisStatus.FAILED
                 return result
-            
-        result.status = AnalysisStatus.COMPLETED_WITH_ERRORS if result.errors else AnalysisStatus.COMPLETED
+
+        result.status = (
+            AnalysisStatus.COMPLETED_WITH_ERRORS if result.errors else AnalysisStatus.COMPLETED
+        )
         result.compute_safety_level()
         return result
 
