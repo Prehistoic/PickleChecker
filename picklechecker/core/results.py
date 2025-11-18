@@ -35,6 +35,7 @@ class AnalysisResult:
 
     Attributes:
         source_path (Path): Path to the analyzed file.
+        disassembly (str): Disassembled pickle string.
         globals_found (List[GlobalReference]): List of global references found.
         opcode_counts (Dict[str, int]): Counts of pickle opcodes encountered.
         status (AnalysisStatus): Current status of the analysis.
@@ -43,6 +44,7 @@ class AnalysisResult:
     """
 
     source_path: Path
+    disassembly: str = ""
     globals_found: List[GlobalReference] = field(default_factory=list)
     opcode_counts: Dict[str, int] = field(default_factory=dict)
     status: AnalysisStatus = AnalysisStatus.ONGOING

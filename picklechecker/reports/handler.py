@@ -84,7 +84,7 @@ class ReportHandler:
         try:
             # Using mkdir() with exist_ok=True and default parents=False
             self.directory.mkdir(exist_ok=True)
-            self.logger.info(f"Directory ensured/created: {self.directory}")
+            self.logger.debug(f"Directory ensured/created: {self.directory}")
         except FileNotFoundError:
             # Raise an informative error if a parent directory is missing
             raise FileNotFoundError(

@@ -13,7 +13,13 @@ from picklechecker.core.scanner import PickleScanner
 from picklechecker.core.globals import GlobalHelper
 from picklechecker.console.formatter import ConsoleResultsFormatter
 from picklechecker.reports.handler import ReportHandler
-from picklechecker.config import HF_ALLOW_PATTERNS, HF_IGNORE_PATTERNS
+from picklechecker.config import (
+    HF_ALLOW_PATTERNS,
+    HF_IGNORE_PATTERNS,
+    ARTIFACTS_DIR,
+    DISASSEMBLY_DIR,
+    DOWNLOADS_DIR,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -67,21 +73,6 @@ logger = logging.getLogger(__name__)
     help='Scan a Hugging Face model by name (e.g., "bert-base-uncased")',
 )
 
-# Download Options (relevant for --model)
-@optgroup.group("Download Options", help="Options for downloading Hugging Face models")
-@optgroup.option(
-    "--download-dir",
-    "download_dir",
-    type=click.Path(file_okay=False, dir_okay=True),
-    help="Directory to download HF models to (uses temp dir if not specified)",
-)
-@optgroup.option(
-    "--full-download",
-    "full_download",
-    is_flag=True,
-    help="Toggle full download of Huggingface model files",
-)
-
 # Output Options
 @optgroup.group("Output Options", help="Options for exporting scan results")
 @optgroup.option(
@@ -104,8 +95,6 @@ def main(
     scan_dir: str | None,
     scan_file: str | None,
     hf_model: str | None,
-    download_dir: str | None,
-    full_download: bool,
     output_path: str | None,
     output_format: str,
 ) -> int:
@@ -120,6 +109,11 @@ def main(
     GlobalHelper.update_globals(list(add_safe), "safe")
     GlobalHelper.update_globals(list(add_unsafe), "unsafe")
 
+    # Prepare artifacts directories
+    shutil.rmtree(ARTIFACTS_DIR, ignore_errors=True)
+    os.makedirs(DISASSEMBLY_DIR, exist_ok=True)
+    os.makedirs(DOWNLOADS_DIR, exist_ok=True)
+
     # Determine target and run scan
     if scan_dir:
         logger.info("Launching directory scan: %s", scan_dir)
@@ -132,30 +126,28 @@ def main(
     else:
         logger.info("Launching Huggingface model scan: %s", hf_model)
 
-        # Download directory handling
-        if download_dir:
-            shutil.rmtree(download_dir, ignore_errors=True)
-            os.makedirs(download_dir, exist_ok=True)
-        else:
-            temp_dir = tempfile.TemporaryDirectory()
-            download_dir = temp_dir.name
-
         try:
-            hf_client = HuggingfaceClient(download_dir)
+            hf_client = HuggingfaceClient(DOWNLOADS_DIR)
 
             hf_client.download_repo(
                 repo_name=hf_model,
-                allow_patterns=HF_ALLOW_PATTERNS if not full_download else None,
-                ignore_patterns=HF_IGNORE_PATTERNS if not full_download else None,
+                allow_patterns=HF_ALLOW_PATTERNS,
+                ignore_patterns=HF_IGNORE_PATTERNS,
             )
         except HuggingfaceClientError as e:
             logger.error(f"Failed to download model from Huggingface: {str(e)}")
             return 1
 
-        results = PickleScanner.scan_directory(download_dir)
+        results = PickleScanner.scan_directory(DOWNLOADS_DIR)
 
     target = scan_dir or scan_file or hf_model
     target_type = "dir" if scan_dir else "file" if scan_file else "hf"
+
+    # Saving disassembled pickle objects
+    logger.info(f"Saving disassembled pickle objects...")
+    for result in results:
+        with open(DISASSEMBLY_DIR / f"{result.source_path.name}.dis", "w") as f:
+            f.write(result.disassembly)
 
     # Exporting results if an output_path has been chosen
     if output_path:

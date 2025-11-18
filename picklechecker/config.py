@@ -13,6 +13,11 @@ DATA_DIR = PROJECT_ROOT / "data"
 SAFE_GLOBALS_FILEPATH = DATA_DIR / "safe_globals.json"
 UNSAFE_GLOBALS_FILEPATH = DATA_DIR / "unsafe_globals.json"
 
+# Default artifacts directory and subdirectories
+ARTIFACTS_DIR = Path.cwd() / ".picklechecker"
+DISASSEMBLY_DIR = ARTIFACTS_DIR / "disassembly"
+DOWNLOADS_DIR = ARTIFACTS_DIR / "downloads"
+
 # Pickle files extensions
 RAW_PICKLE_FILES_EXT = {".pkl", ".pickle"}
 PYTORCH_FILES_EXT = {".pt", ".pth", ".bin"}

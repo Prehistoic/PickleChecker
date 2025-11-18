@@ -19,6 +19,9 @@ class PickleScanner:
 
     logger = logging.getLogger(__name__)
 
+    # Directories to skip during scanning
+    SKIP_DIRECTORIES = {".cache"}
+
     @classmethod
     def _list_globals(cls, data: IO[bytes], result: AnalysisResult) -> None:
         """
@@ -114,6 +117,35 @@ class PickleScanner:
             result.status = AnalysisStatus.COMPLETED
 
     @classmethod
+    def _disassemble_pickle(cls, data: IO[bytes], result: AnalysisResult) -> None:
+        """
+        Disassembles pickle data into human-readable opcodes.
+
+        Args:
+            data (bytes): The pickle data to disassemble
+        """
+        output = io.StringIO()
+
+        pickletools.dis(data, out=output)
+        result.disassembly += output.getvalue()
+
+        output.close()
+
+    @classmethod
+    def _should_skip_path(cls, path: Path) -> bool:
+        """
+        Determines if a path should be skipped during scanning.
+
+        Args:
+            path (Path): The path to check.
+
+        Returns:
+            bool: True if the path should be skipped, False otherwise.
+        """
+        # Skip if any part of the path is in SKIP_DIRECTORIES
+        return any(part in cls.SKIP_DIRECTORIES for part in path.parts)
+
+    @classmethod
     def scan_file(cls, filepath: str | Path) -> AnalysisResult:
         """
         Scans a single file for pickle safety.
@@ -144,6 +176,16 @@ class PickleScanner:
 
         for blob in blobs:
             try:
+                cls._disassemble_pickle(io.BytesIO(blob), result)
+            except Exception as e:
+                cls.logger.error(
+                    f"Failed to disassemble for blob in {target_filepath}: {str(e)}", exc_info=True
+                )
+                result.errors.append(f"Disassembling failed for a blob: {str(e)}")
+                result.status = AnalysisStatus.FAILED
+                return result
+
+            try:
                 cls._list_globals(io.BytesIO(blob), result)
             except Exception as e:
                 cls.logger.error(
@@ -161,8 +203,6 @@ class PickleScanner:
         """
         Scans all files in a directory recursively for pickle safety.
 
-        Skips files in dot-directories or dot-files.
-
         Args:
             dirpath (str | Path): Path to the directory to scan.
 
@@ -174,12 +214,10 @@ class PickleScanner:
 
         # Recursively find all files, skipping hidden ones
         for file_path in target_dirpath.rglob("*"):
-            if file_path.is_file() and not any(
-                part.startswith(".") for part in file_path.parts
-            ):  # Skip files in dot-directories or dot-files
+            if file_path.is_file() and not cls._should_skip_path(file_path):
                 cls.logger.debug(f"Analyzing {file_path}...")
                 result = cls.scan_file(file_path)
-                result.compute_safety_level()  # Ensure safety level is computed
+                result.compute_safety_level()
                 results.append(result)
 
         cls.logger.info(f"Scan finished for directory {dirpath}")
