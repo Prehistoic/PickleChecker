@@ -53,21 +53,21 @@ logger = logging.getLogger(__name__)
 )
 @optgroup.option(
     "--directory",
-    "-d",
+    "-D",
     "scan_dir",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
     help="Scan all files in the specified directory",
 )
 @optgroup.option(
     "--file",
-    "-f",
+    "-F",
     "scan_file",
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
     help="Scan a specific file",
 )
 @optgroup.option(
     "--model",
-    "-m",
+    "-M",
     "hf_model",
     type=str,
     help='Scan a Hugging Face model by name (e.g., "bert-base-uncased")',
@@ -77,12 +77,14 @@ logger = logging.getLogger(__name__)
 @optgroup.group("Output Options", help="Options for exporting scan results")
 @optgroup.option(
     "--output",
+    "-o",
     "output_path",
     type=click.Path(file_okay=True, dir_okay=False),
     help="Path where results should be saved (no export if not specified)",
 )
 @optgroup.option(
     "--format",
+    "-f",
     "output_format",
     type=click.Choice(["pdf", "json"]),
     default="pdf",

@@ -11,6 +11,7 @@ import io
 from picklechecker.core.results import AnalysisResult, AnalysisStatus
 from picklechecker.core.extractor import PickleExtractor
 
+from picklechecker.config import EXCLUDE_FILES, EXCLUDE_DIRECTORIES
 
 class PickleScanner:
     """
@@ -19,11 +20,8 @@ class PickleScanner:
 
     logger = logging.getLogger(__name__)
 
-    # Directories to skip during scanning
-    SKIP_DIRECTORIES = {".cache"}
-
     @classmethod
-    def _list_globals(cls, data: IO[bytes], result: AnalysisResult) -> None:
+    def _list_globals(cls, data: IO[bytes], result: AnalysisResult, multiple_pickles: bool = True) -> None:
         """
         Parses pickle opcodes from the data stream and extracts global references.
 
@@ -33,103 +31,122 @@ class PickleScanner:
         Args:
             data (IO[bytes]): Binary stream of pickle data.
             result (AnalysisResult): The result object to update with findings.
+            multiple_pickles (bool): whether the data can contain several pickles at once
         """
-        ops = []
-        got_an_error = False
-
-        # Attempt to parse all opcodes; continue even if errors occur
-        try:
-            for op in pickletools.genops(data):
-                ops.append(op)
-        except Exception as e:
-            cls.logger.warning(f"Error while parsing pickle: {e}")
-            result.errors.append(f"Pickle parsing error: {str(e)}")
-            got_an_error = True
-
         memo: dict[int, Any] = {}
         globals_set = set()
 
-        for n, op in enumerate(ops):
-            op_name = op[0].name
-            op_value = op[1]
+        last_byte = b"dummy"
 
-            # Update opcode counts for analysis
-            result.opcode_counts[op_name] = result.opcode_counts.get(op_name, 0) + 1
+        while last_byte != b"":
 
-            # Handle memoization opcodes
-            if op_name == "MEMOIZE" and n > 0:
-                memo[len(memo)] = ops[n - 1][1]
-            elif op_name in ["PUT", "BINPUT", "LONG_BINPUT"] and n > 0:
-                memo[op_value] = ops[n - 1][1]
+            # Attempt to parse all opcodes; continue even if errors occur
+            ops = []
+            try:
+                for op in pickletools.genops(data):
+                    ops.append(op)
+            except Exception as e:
+                cls.logger.warning(f"Error while parsing pickle: {e}")
+                result.errors.append(f"Pickle parsing error: {str(e)}")
 
-            # Handle GLOBAL and INST opcodes (direct module:name)
-            elif op_name in ("GLOBAL", "INST"):
-                try:
-                    module, name = op_value.split(" ", 1)
-                except ValueError:
-                    module, name = ("<unknown>", str(op_value))
-                globals_set.add((module, name))
-                result.add_global(module, name, op_name, n)
+            last_byte = data.read(1)
+            data.seek(-1, 1)
 
-            # Handle STACK_GLOBAL by inspecting the stack for module and name
-            elif op_name == "STACK_GLOBAL":
-                values = []
-                # Look back through previous opcodes to find the values on the stack
-                for offset in range(1, n + 1):
-                    prev_op = ops[n - offset]
-                    prev_name = prev_op[0].name
-                    if prev_name in ["MEMOIZE", "PUT", "BINPUT", "LONG_BINPUT"]:
-                        continue
-                    if prev_name in ["GET", "BINGET", "LONG_BINGET"]:
-                        values.append(
-                            memo.get(int(prev_op[1]) if prev_op[1] is not None else 0, "<unknown>")
+            for n, op in enumerate(ops):
+                op_name = op[0].name
+                op_value = op[1]
+
+                # Update opcode counts for analysis
+                result.opcode_counts[op_name] = result.opcode_counts.get(op_name, 0) + 1
+
+                # Handle memoization opcodes
+                if op_name == "MEMOIZE" and n > 0:
+                    memo[len(memo)] = ops[n - 1][1]
+                elif op_name in ["PUT", "BINPUT", "LONG_BINPUT"] and n > 0:
+                    memo[op_value] = ops[n - 1][1]
+
+                # Handle GLOBAL and INST opcodes (direct module:name)
+                elif op_name in ("GLOBAL", "INST"):
+                    try:
+                        module, name = op_value.split(" ", 1)
+                    except ValueError:
+                        module, name = ("<unknown>", str(op_value))
+                    globals_set.add((module, name))
+                    result.add_global(module, name, op_name, n)
+
+                # Handle STACK_GLOBAL by inspecting the stack for module and name
+                elif op_name == "STACK_GLOBAL":
+                    values = []
+                    # Look back through previous opcodes to find the values on the stack
+                    for offset in range(1, n + 1):
+                        prev_op = ops[n - offset]
+                        prev_name = prev_op[0].name
+                        if prev_name in ["MEMOIZE", "PUT", "BINPUT", "LONG_BINPUT"]:
+                            continue
+                        if prev_name in ["GET", "BINGET", "LONG_BINGET"]:
+                            values.append(
+                                memo.get(int(prev_op[1]) if prev_op[1] is not None else 0, "<unknown>")
+                            )
+                        elif prev_name not in [
+                            "SHORT_BINUNICODE",
+                            "UNICODE",
+                            "BINUNICODE",
+                            "BINUNICODE8",
+                            "STRING",
+                            "BINSTRING",
+                            "SHORT_BINSTRING",
+                        ]:
+                            values.append("<unknown>")
+                        else:
+                            values.append(prev_op[1] if prev_op[1] is not None else "<unknown>")
+                        if len(values) == 2:
+                            break
+                    if len(values) != 2:
+                        result.errors.append(
+                            f"STACK_GLOBAL at position {n}: found {len(values)} values instead of 2"
                         )
-                    elif prev_name not in [
-                        "SHORT_BINUNICODE",
-                        "UNICODE",
-                        "BINUNICODE",
-                        "BINUNICODE8",
-                        "STRING",
-                        "BINSTRING",
-                        "SHORT_BINSTRING",
-                    ]:
-                        values.append("<unknown>")
-                    else:
-                        values.append(prev_op[1] if prev_op[1] is not None else "<unknown>")
-                    if len(values) == 2:
-                        break
-                if len(values) != 2:
-                    result.errors.append(
-                        f"STACK_GLOBAL at position {n}: found {len(values)} values instead of 2"
+                        continue
+                    module, name = (
+                        values[1] if values[1] is not None else "<unknown>",
+                        values[0] if values[0] is not None else "<unknown>",
                     )
-                    continue
-                module, name = (
-                    values[1] if values[1] is not None else "<unknown>",
-                    values[0] if values[0] is not None else "<unknown>",
-                )
-                globals_set.add((module, name))
-                result.add_global(module, name, "STACK_GLOBAL", n)
+                    globals_set.add((module, name))
+                    result.add_global(module, name, "STACK_GLOBAL", n)
 
-        # Set status based on whether errors occurred and opcodes were found
-        if got_an_error:
-            result.status = AnalysisStatus.COMPLETED_WITH_ERRORS if ops else AnalysisStatus.FAILED
-        else:
-            result.status = AnalysisStatus.COMPLETED
+            if not multiple_pickles:
+                break
 
     @classmethod
-    def _disassemble_pickle(cls, data: IO[bytes], result: AnalysisResult) -> None:
+    def _disassemble_pickle(cls, data: IO[bytes], result: AnalysisResult, multiple_pickles: bool = True) -> None:
         """
         Disassembles pickle data into human-readable opcodes.
 
         Args:
             data (bytes): The pickle data to disassemble
+            result (AnalysisResult): The result object to update with findings.
+            multiple_pickles (bool): whether the data can contain several pickles at once
         """
-        output = io.StringIO()
 
-        pickletools.dis(data, out=output)
-        result.disassembly += output.getvalue()
+        last_byte = b"dummy"
 
-        output.close()
+        while last_byte != b"":
+
+            # Attempt to disassemble all streams; continue even if errors occur
+            output = io.StringIO()
+            try:
+                pickletools.dis(data, out=output)
+                result.disassembly += output.getvalue()
+            except Exception as e:
+                cls.logger.warning(f"Error while disassembling pickle: {e}")
+                result.errors.append(f"Pickle disassembling error: {str(e)}")
+            finally:
+                output.close()
+
+            last_byte = data.read(1)
+            data.seek(-1, 1)
+
+            if not multiple_pickles:
+                break
 
     @classmethod
     def _should_skip_path(cls, path: Path) -> bool:
@@ -142,8 +159,15 @@ class PickleScanner:
         Returns:
             bool: True if the path should be skipped, False otherwise.
         """
-        # Skip if any part of the path is in SKIP_DIRECTORIES
-        return any(part in cls.SKIP_DIRECTORIES for part in path.parts)
+        # Check if filename is in EXCLUDE_FILES
+        if path.name in EXCLUDE_FILES:
+            return True
+        
+        # Check if any directory in the path is in EXCLUDE_DIRECTORIES
+        if any(part in EXCLUDE_DIRECTORIES for part in path.parts):
+            return True
+        
+        return False
 
     @classmethod
     def scan_file(cls, filepath: str | Path) -> AnalysisResult:
@@ -194,7 +218,8 @@ class PickleScanner:
                 result.errors.append(f"Global listing failed for a blob: {str(e)}")
                 result.status = AnalysisStatus.FAILED
                 return result
-
+            
+        result.status = AnalysisStatus.COMPLETED_WITH_ERRORS if result.errors else AnalysisStatus.COMPLETED
         result.compute_safety_level()
         return result
 

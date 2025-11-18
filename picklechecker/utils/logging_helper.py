@@ -20,6 +20,7 @@ def setup_logging(level=logging.INFO) -> None:
     logging.getLogger("httpx").setLevel(logging.CRITICAL)
     logging.getLogger("httpcore").setLevel(logging.CRITICAL)
     logging.getLogger("filelock").setLevel(logging.CRITICAL)
+    logging.getLogger("PIL").setLevel(logging.CRITICAL)
 
     # Configure the project root logger
     project_root_logger = logging.getLogger()

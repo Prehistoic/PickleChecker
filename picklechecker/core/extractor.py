@@ -251,28 +251,20 @@ class PickleExtractor:
 
         # Old PyTorch format (TAR-based)
         else:
-            extracted_pickles = []
-
             should_read_directly = TorchHelper._should_read_directly(data)
             if should_read_directly and data.tell() == 0:
                 try:
-                    # TODO: Implement TAR extraction for old PyTorch format
-                    cls.logger.error(
-                        f"Should read {filepath} directly and load it as a tar archive"
-                    )
+                    # TODO: Implement TAR extraction for legacy PyTorch format
                     raise TarError()
                 except TarError:
                     # Not a valid TAR, reset and continue
                     data.seek(0)
-                    return []
 
             # Validate PyTorch magic number
             magic = TorchHelper.get_magic_number(data)
             if magic != PYTORCH_FILES_MAGIC:
                 raise InvalidMagicError(magic, PYTORCH_FILES_MAGIC, filepath)
 
-            # Extract up to 5 pickle streams
-            for _ in range(5):
-                extracted_pickles.extend(cls.extract_pickles_from_bytes(data, filepath))
-
-            return extracted_pickles
+            # Legacy Pytorch models are actually one raw pickle byte stream. Thus we simply return the raw data
+            raw_data = data.read()
+            return [raw_data]

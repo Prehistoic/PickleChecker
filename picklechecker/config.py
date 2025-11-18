@@ -18,9 +18,15 @@ ARTIFACTS_DIR = Path.cwd() / ".picklechecker"
 DISASSEMBLY_DIR = ARTIFACTS_DIR / "disassembly"
 DOWNLOADS_DIR = ARTIFACTS_DIR / "downloads"
 
+# Files and directories to skip
+EXCLUDE_FILES = {}
+EXCLUDE_DIRECTORIES = {
+    ".cache", # cache directory when downloading HF models
+}
+
 # Pickle files extensions
 RAW_PICKLE_FILES_EXT = {".pkl", ".pickle"}
-PYTORCH_FILES_EXT = {".pt", ".pth", ".bin"}
+PYTORCH_FILES_EXT = {".pt", ".pth", ".bin", ".ckpt"}
 NUMPY_FILES_EXT = {".npy"}  # .npz is handled as a zip file
 ZIP_FILES_EXT = {".zip", ".7z", ".npz"}
 OTHER_FILES_EXT = {".joblib", ".data", ".dat"}
