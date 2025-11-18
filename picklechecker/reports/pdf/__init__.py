@@ -13,7 +13,7 @@ from picklechecker.reports.pdf.cover import PdfCover
 from picklechecker.reports.pdf.details import PdfDetails
 
 
-class PdfReport(Report):
+class PdfReportGenerator(Report):
     """
     Class for generating PDF reports from pickle scan results.
     """

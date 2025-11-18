@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import List, Any
 import logging
 
-from picklechecker.reports.pdf import PdfReport
+from picklechecker.reports.pdf import PdfReportGenerator
+from picklechecker.reports.json import JsonReportGenerator
 from picklechecker.core.results import AnalysisResult
 
 
@@ -16,7 +17,7 @@ class ReportHandler:
     logger = logging.getLogger(__name__)
 
     # Map CLI format string to the corresponding Report Class
-    FORMAT_MAP = {"pdf": PdfReport}
+    FORMAT_MAP = {"pdf": PdfReportGenerator, "json": JsonReportGenerator}
 
     def __init__(self, output_path: str, format_key: str):
         """

@@ -93,7 +93,7 @@ logger = logging.getLogger(__name__)
 @optgroup.option(
     "--format",
     "output_format",
-    type=click.Choice(["pdf"]),
+    type=click.Choice(["pdf", "json"]),
     default="pdf",
     help="Format for exported results (default=pdf)",
 )
