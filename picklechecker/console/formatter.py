@@ -83,7 +83,7 @@ class ConsoleResultsFormatter:
 
         # Add file summary and imports table to the container
         result_container.add_row(
-            f"[bold]{result.source_path.name}[/bold] --> [{cls.safety_style(result.safety)}]{result.safety.name}[/]"
+            f"[bold]{str(result.source_path)}[/bold] --> [{cls.safety_style(result.safety)}]{result.safety.name}[/]"
         )
         result_container.add_row(imports_table)
 

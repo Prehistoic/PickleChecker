@@ -49,7 +49,7 @@ class JsonReportGenerator(Report):
             },
             "results": [
                 {
-                    "filename": str(result.source_path.name),
+                    "filename": str(result.source_path),
                     "safety": result.safety.name,
                     "scan_errors": result.errors,
                     "globals": [

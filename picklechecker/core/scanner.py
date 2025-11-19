@@ -175,18 +175,31 @@ class PickleScanner:
         return False
 
     @classmethod
-    def scan_file(cls, filepath: str | Path) -> AnalysisResult:
+    def scan_file(cls, filepath: str | Path, scandir: str | Path = None) -> AnalysisResult:
         """
         Scans a single file for pickle safety.
 
         Args:
             filepath (str | Path): Path to the file to scan.
+            scandir (str | Path): Path of the directory scanned (not relevant for single file scans)
 
         Returns:
             AnalysisResult: The analysis result for the file.
         """
         target_filepath = Path(filepath)
-        result = AnalysisResult(source_path=target_filepath)
+        scandir_path = Path(scandir) if scandir else None
+
+        # Get relative path if scandir is provided, otherwise use absolute path
+        if scandir_path:
+            try:
+                source_path = target_filepath.relative_to(scandir_path)
+            except ValueError:
+                # If not relative, fall back to absolute path
+                source_path = target_filepath
+        else:
+            source_path = target_filepath
+
+        result = AnalysisResult(source_path=source_path)
 
         try:
             blobs = PickleExtractor.extract_pickles_from_filepath(target_filepath)
@@ -248,7 +261,7 @@ class PickleScanner:
         for file_path in target_dirpath.rglob("*"):
             if file_path.is_file() and not cls._should_skip_path(file_path):
                 cls.logger.debug(f"Analyzing {file_path}...")
-                result = cls.scan_file(file_path)
+                result = cls.scan_file(filepath=file_path, scandir=target_dirpath)
                 result.compute_safety_level()
                 results.append(result)
 

@@ -182,7 +182,7 @@ class PdfDetails:
 
         for result in results:
             # Page title: filename
-            filename = result.source_path.name
+            filename = str(result.source_path)
             story.append(Paragraph(filename, custom_styles["file_title"]))
 
             # Thin underline for separation
