@@ -148,8 +148,9 @@ def main(
     # Saving disassembled pickle objects
     logger.info(f"Saving disassembled pickle objects...")
     for result in results:
-        with open(DISASSEMBLY_DIR / f"{result.source_path.name}.dis", "w") as f:
-            f.write(result.disassembly)
+        if result.disassembly != "":
+            with open(DISASSEMBLY_DIR / f"{result.source_path.name}.dis", "w") as f:
+                f.write(result.disassembly)
 
     # Exporting results if an output_path has been chosen
     if output_path:
