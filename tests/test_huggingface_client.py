@@ -1,3 +1,5 @@
+"""Unit tests for picklechecker.huggingface.client module"""
+
 import importlib
 import logging
 import pytest

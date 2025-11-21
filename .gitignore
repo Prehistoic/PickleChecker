@@ -215,6 +215,10 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Generated test data
+tests/test_data/
+tests/test_data_extractor/
+
 # Outputs
 .picklechecker/
 *.json

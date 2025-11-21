@@ -100,12 +100,11 @@ class AnalysisResult:
         Computes the overall safety level of the file based on the highest risk global found.
         """
         if not self.globals_found:
-            self.safety = SafetyLevel.UNKNOWN
-            return
-
-        # Find the maximum safety value (highest risk)
-        max_safety_value = max(g.safety.value for g in self.globals_found)
-        self.safety = SafetyLevel(max_safety_value)
+            self.safety = SafetyLevel.INNOCUOUS
+        else:
+            # Find the maximum safety value (highest risk)
+            max_safety_value = max(g.safety.value for g in self.globals_found)
+            self.safety = SafetyLevel(max_safety_value)
 
     def to_dict(self) -> Dict[str, Any]:
         """

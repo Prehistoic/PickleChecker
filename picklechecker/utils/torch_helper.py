@@ -32,7 +32,7 @@ class InvalidMagicError(Exception):
         Returns:
             str: Error message with file and magic numbers.
         """
-        return f"{self.file}: {self.provided_magic} != {self.magic}"
+        return f"{self.provided_magic} != {self.magic}"
 
 
 class TorchHelper:

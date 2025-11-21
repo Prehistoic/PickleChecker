@@ -37,7 +37,7 @@ PICKLE_FILE_FORMATS = list(
 
 # Pickle files magic bytes
 RAW_PICKLE_FILES_MAGIC = {
-    b"\x80\x02",  # Protocol 0, 1, 2
+    b"\x80\x02",  # Protocol 2
     b"\x80\x03",  # Protocol 3
     b"\x80\x04",  # Protocol 4
     b"\x80\x05",  # Protocol 5

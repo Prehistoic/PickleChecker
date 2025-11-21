@@ -62,17 +62,8 @@ class PickleExtractor:
             List[bytes]: List of extracted pickle byte streams.
         """
         cls.logger.debug("Extracting pickles from pickle bytes")
-
-        # Check if the data startswith known raw pickle magic numbers
-        magic_bytes = data.read(max(len(magic) for magic in RAW_PICKLE_FILES_MAGIC))
-        data.seek(0)
-
-        if magic_bytes in RAW_PICKLE_FILES_MAGIC:
-            return [data.read()]
-        else:
-            cls.logger.warning("Invalid magic number. No pickle stream found")
-            return []
-
+        return [data.read()]
+    
     @classmethod
     def extract_pickles_from_bytes(
         cls, data: IO[bytes], file_ext: Optional[str] = None
@@ -223,6 +214,7 @@ class PickleExtractor:
         if magic.startswith(tuple(ZIP_FILES_MAGIC)):
             # .npz files are ZIP archives, but not handled here
             cls.logger.warning(f".npz file not handled as zip file")
+            return []
 
         elif magic == NUMPY_FILES_MAGIC:
             # Read NumPy file header
