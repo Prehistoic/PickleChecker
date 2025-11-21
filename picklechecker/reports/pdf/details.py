@@ -61,7 +61,11 @@ class PdfDetails:
         # If there was any, show errors
         if result.errors:
             block_story.append(Spacer(1, 6))
-            error_text = "<br/>".join([f"<i> - {error}</i>" for error in result.errors])
+            errors_to_show = result.errors[:10]
+            error_text = "<br/>".join([f"<i> - {error}</i>" for error in errors_to_show])
+            if len(result.errors) > 10:
+                remaining = len(result.errors) - 10
+                error_text += f"<br/><i>... and {remaining} more errors</i>"
             block_story.append(Paragraph(error_text, custom_styles["details_value"]))
             block_story.append(Spacer(1, 4))
 
