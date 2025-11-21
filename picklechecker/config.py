@@ -51,6 +51,7 @@ _7Z_FILES_MAGIC = b"7z\xbc\xaf'\x1c"
 PYTORCH_FILES_MAGIC = 0x1950A86A20F9469CFC6C
 
 # Huggingface config
+HF_ENDPOINT = os.getenv("HF_ENDPOINT")
 HF_TOKEN = os.getenv("HF_TOKEN")
 HF_ETAG_TIMEOUT = 86400
 HF_ALLOW_PATTERNS = [f"*{format}" for format in PICKLE_FILE_FORMATS]

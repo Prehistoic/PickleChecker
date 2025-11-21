@@ -13,18 +13,16 @@ class InvalidMagicError(Exception):
     Exception raised when the magic number in a PyTorch file does not match the expected value.
     """
 
-    def __init__(self, provided_magic: Optional[int], magic: int, file: str):
+    def __init__(self, provided_magic: Optional[int], magic: int):
         """
         Initializes the exception with magic number details.
 
         Args:
             provided_magic (Optional[int]): The magic number found in the file.
             magic (int): The expected magic number.
-            file (str): The file path or name.
         """
         self.provided_magic = provided_magic
         self.magic = magic
-        self.file = file
         super().__init__()
 
     def __str__(self) -> str:

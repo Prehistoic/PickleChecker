@@ -48,29 +48,51 @@ class PickleExtractor:
 
         file_ext = os.path.splitext(filepath)[1]
         with open(filepath, "rb") as file:
-            return cls.extract_pickles_from_bytes(file, filepath, file_ext)
+            return cls.extract_pickles_from_bytes(file, file_ext)
+
+    @classmethod
+    def extract_pickles_from_pickle_bytes(cls, data: IO[bytes]) -> List[bytes]:
+        """
+        Verifies and extract pickle streams from pickle byte raw data
+
+        Args:
+            data (IO[bytes]): Binary file-like object containing the data.
+
+        Returns:
+            List[bytes]: List of extracted pickle byte streams.
+        """
+        cls.logger.debug("Extracting pickles from pickle bytes")
+
+        # Check if the data startswith known raw pickle magic numbers
+        magic_bytes = data.read(max(len(magic) for magic in RAW_PICKLE_FILES_MAGIC))
+        data.seek(0)
+
+        if magic_bytes in RAW_PICKLE_FILES_MAGIC:
+            return [data.read()]
+        else:
+            cls.logger.warning("Invalid magic number. No pickle stream found")
+            return []
 
     @classmethod
     def extract_pickles_from_bytes(
-        cls, data: IO[bytes], filepath: str | Path, file_ext: Optional[str] = None
+        cls, data: IO[bytes], file_ext: Optional[str] = None
     ) -> List[bytes]:
         """
         Extracts pickle streams from byte data, handling different file formats.
 
         Args:
             data (IO[bytes]): Binary file-like object containing the data.
-            filepath (str | Path): Path to the file for logging purposes.
             file_ext (Optional[str]): File extension to aid format detection.
 
         Returns:
             List[bytes]: List of extracted pickle byte streams.
         """
-        cls.logger.debug(f"Extracting pickles from bytes coming from {filepath}")
+        cls.logger.debug("Extracting pickles from bytes")
 
         # Check for PyTorch files first
         if file_ext is not None and file_ext in PYTORCH_FILES_EXT:
             try:
-                return cls.extract_pickles_from_pytorch(data, filepath)
+                return cls.extract_pickles_from_pytorch(data)
             except InvalidMagicError as e:
                 cls.logger.warning(
                     f"Invalid PyTorch magic number for file {e}. Trying to scan as non-PyTorch file."
@@ -79,38 +101,34 @@ class PickleExtractor:
 
         # Check for NumPy files
         if file_ext is not None and file_ext in NUMPY_FILES_EXT:
-            return cls.extract_pickles_from_numpy(data, filepath)
+            return cls.extract_pickles_from_numpy(data)
 
         # Check for ZIP archives
         is_zip = ZipHelper._is_zip_file(data)
         data.seek(0)
         if is_zip:
-            return cls.extract_pickles_from_zip(data, filepath)
+            return cls.extract_pickles_from_zip(data)
         elif ZipHelper._is_7z_file(data):
-            return cls.extract_pickles_from_7z(data, filepath)
+            return cls.extract_pickles_from_7z(data)
         else:
             # Assume raw pickle file
-            stream = Path(filepath).read_bytes()
-            return [stream]
+            return cls.extract_pickles_from_pickle_bytes(data)
 
     @classmethod
-    def extract_pickles_from_7z(cls, data: IO[bytes], filepath: str | Path) -> List[bytes]:
+    def extract_pickles_from_7z(cls, data: IO[bytes]) -> List[bytes]:
         """
         Extracts pickle streams from a 7z archive.
 
         Args:
             data (IO[bytes]): Binary file-like object containing the 7z data.
-            filepath (str | Path): Path to the file for logging purposes.
 
         Returns:
             List[bytes]: List of extracted pickle byte streams.
         """
-        cls.logger.debug(f"Extracting pickles from 7z archive {filepath}")
+        cls.logger.debug("Extracting pickles from 7z archive")
 
         if not ZipHelper._is_7z_file(data):
-            cls.logger.warning(
-                f"Failed to extract pickles from {filepath}. Not a valid 7z archive."
-            )
+            cls.logger.warning(f"Failed to extract pickles. Not a valid 7z archive.")
             return []
 
         extracted_pickles = []
@@ -119,14 +137,14 @@ class PickleExtractor:
             filenames = archive.getnames()
             # Filter for files with pickle extensions
             targets = [f for f in filenames if f.endswith(tuple(RAW_PICKLE_FILES_EXT))]
-            cls.logger.debug(f"Target files in 7z archive {filepath}: {', '.join(targets)}")
+            cls.logger.debug(f"Target files in 7z archive : {', '.join(targets)}")
 
             # Extract to temp directory and process
             with tempfile.TemporaryDirectory() as tmpdir:
                 archive.extract(path=tmpdir, targets=targets)
                 for filename in targets:
                     tmp_filepath = os.path.join(tmpdir, filename)
-                    cls.logger.debug(f"Found raw pickle {tmp_filepath} in 7z archive {filepath}")
+                    cls.logger.debug(f"Found raw pickle {tmp_filepath} in 7z archive")
 
                     if os.path.isfile(tmp_filepath):
                         extracted_pickles.extend(cls.extract_pickles_from_filepath(tmp_filepath))
@@ -134,36 +152,33 @@ class PickleExtractor:
         return extracted_pickles
 
     @classmethod
-    def extract_pickles_from_zip(cls, data: IO[bytes], filepath: str | Path) -> List[bytes]:
+    def extract_pickles_from_zip(cls, data: IO[bytes]) -> List[bytes]:
         """
         Extracts pickle streams from a ZIP archive.
 
         Args:
             data (IO[bytes]): Binary file-like object containing the ZIP data.
-            filepath (str | Path): Path to the file for logging purposes.
 
         Returns:
             List[bytes]: List of extracted pickle byte streams.
         """
-        cls.logger.debug(f"Extracting pickles from ZIP archive {filepath}")
+        cls.logger.debug(f"Extracting pickles from ZIP archive")
 
         if not zipfile.is_zipfile(data):
-            cls.logger.warning(
-                f"Failed to extract pickles from {filepath}. Not a valid ZIP archive."
-            )
+            cls.logger.warning(f"Failed to extract pickles. Not a valid ZIP archive.")
             return []
 
         extracted_pickles = []
 
         with RelaxedZipFile(data, "r") as zip:
             filenames = zip.namelist()
-            cls.logger.debug(f"Found {len(filenames)} files in {filepath}")
+            cls.logger.debug(f"Found {len(filenames)} files")
 
             for filename in filenames:
                 try:
                     # Read magic bytes to check file type
                     with zip.open(filename, "r") as file:
-                        magic_bytes = file.read(8)
+                        magic_bytes = file.read(max(len(magic) for magic in RAW_PICKLE_FILES_MAGIC))
 
                     file_ext = os.path.splitext(filename)[1]
 
@@ -171,36 +186,33 @@ class PickleExtractor:
                     if file_ext in RAW_PICKLE_FILES_EXT or any(
                         magic_bytes.startswith(mn) for mn in RAW_PICKLE_FILES_MAGIC
                     ):
-                        cls.logger.debug(f"Found raw pickle file {filename} in {filepath}")
+                        cls.logger.debug(f"Found raw pickle file {filename}")
                         with zip.open(filename, "r") as file:
-                            extracted_pickles.append(file.read())
+                            extracted_pickles.extend(cls.extract_pickles_from_pickle_bytes(file))
 
                     elif file_ext in NUMPY_FILES_EXT or magic_bytes.startswith(NUMPY_FILES_MAGIC):
-                        cls.logger.debug(f"Found numpy file {filename} in {filepath}")
+                        cls.logger.debug(f"Found numpy file {filename}")
                         with zip.open(filename, "r") as file:
-                            extracted_pickles.extend(cls.extract_pickles_from_numpy(file, filepath))
+                            extracted_pickles.extend(cls.extract_pickles_from_numpy(file))
 
                 except (zipfile.BadZipFile, RuntimeError) as e:
                     # Handle corrupted or password-protected files
-                    cls.logger.warning(
-                        f"Invalid file {filename} in zip archive {filepath}: {str(e)}"
-                    )
+                    cls.logger.warning(f"Invalid file {filename} in zip archive: {str(e)}")
 
         return extracted_pickles
 
     @classmethod
-    def extract_pickles_from_numpy(cls, data: IO[bytes], filepath: str | Path) -> List[bytes]:
+    def extract_pickles_from_numpy(cls, data: IO[bytes]) -> List[bytes]:
         """
         Extracts pickle streams from a NumPy .npy or .npz file.
 
         Args:
             data (IO[bytes]): Binary file-like object containing the NumPy data.
-            filepath (str | Path): Path to the file for logging purposes.
 
         Returns:
             List[bytes]: List of extracted pickle byte streams.
         """
-        cls.logger.debug(f"Extracting pickles from numpy file {filepath}")
+        cls.logger.debug(f"Extracting pickles from numpy file")
 
         N = len(NUMPY_FILES_MAGIC)
         magic = data.read(N)
@@ -210,7 +222,7 @@ class PickleExtractor:
 
         if magic.startswith(tuple(ZIP_FILES_MAGIC)):
             # .npz files are ZIP archives, but not handled here
-            cls.logger.warning(f".npz file not handled as zip file: {filepath}")
+            cls.logger.warning(f".npz file not handled as zip file")
 
         elif magic == NUMPY_FILES_MAGIC:
             # Read NumPy file header
@@ -220,34 +232,33 @@ class PickleExtractor:
 
             if dtype.hasobject:
                 # Contains pickled objects
-                return [Path(filepath).read_bytes()]
+                return cls.extract_pickles_from_pickle_bytes(data)
             else:
-                cls.logger.info(f"{filepath} does not contain any pickled data")
+                cls.logger.info("File does not contain any pickled data")
                 return []
 
         else:
             # Fallback: treat as raw pickle
-            return [Path(filepath).read_bytes()]
+            return cls.extract_pickles_from_pickle_bytes(data)
 
     @classmethod
-    def extract_pickles_from_pytorch(cls, data: IO[bytes], filepath: str | Path) -> List[bytes]:
+    def extract_pickles_from_pytorch(cls, data: IO[bytes]) -> List[bytes]:
         """
         Extracts pickle streams from a PyTorch model file.
 
         Args:
             data (IO[bytes]): Binary file-like object containing the PyTorch data.
-            filepath (str | Path): Path to the file for logging purposes.
 
         Returns:
             List[bytes]: List of extracted pickle byte streams.
         """
-        cls.logger.debug(f"Extracting pickles from pytorch file {filepath}")
+        cls.logger.debug(f"Extracting pickles from pytorch file")
 
         # New PyTorch format (ZIP-based)
         if TorchHelper._is_zipfile(data):
-            return cls.extract_pickles_from_zip(data, filepath)
+            return cls.extract_pickles_from_zip(data)
         elif ZipHelper._is_7z_file(data):
-            return cls.extract_pickles_from_7z(data, filepath)
+            return cls.extract_pickles_from_7z(data)
 
         # Old PyTorch format (TAR-based)
         else:
@@ -263,8 +274,7 @@ class PickleExtractor:
             # Validate PyTorch magic number
             magic = TorchHelper.get_magic_number(data)
             if magic != PYTORCH_FILES_MAGIC:
-                raise InvalidMagicError(magic, PYTORCH_FILES_MAGIC, filepath)
+                raise InvalidMagicError(magic, PYTORCH_FILES_MAGIC)
 
             # Legacy Pytorch models are actually one raw pickle byte stream. Thus we simply return the raw data
-            raw_data = data.read()
-            return [raw_data]
+            return cls.extract_pickles_from_pickle_bytes(data)

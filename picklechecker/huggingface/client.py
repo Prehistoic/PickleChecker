@@ -7,7 +7,7 @@ from typing import List
 
 from huggingface_hub import snapshot_download, hf_hub_download
 
-from picklechecker.config import HF_TOKEN, HF_ETAG_TIMEOUT
+from picklechecker.config import HF_ENDPOINT, HF_TOKEN, HF_ETAG_TIMEOUT
 
 
 class HuggingfaceClientError(RuntimeError):
@@ -31,8 +31,12 @@ class HuggingfaceClient:
         Args:
             download_dir (str): Directory path where downloads will be stored.
         """
+        self.hf_endpoint = HF_ENDPOINT
         self.hf_token = HF_TOKEN
         self.etag_timeout = HF_ETAG_TIMEOUT
+
+        if not self.hf_endpoint:
+            self.logger.warning("Environment variable HF_ENDPOINT is not set!")
 
         if not self.hf_token:
             self.logger.warning("Environment variable HF_TOKEN is not set!")
@@ -69,6 +73,10 @@ class HuggingfaceClient:
                 self.logger.debug(f"Ignore Patterns: {ignore_patterns}")
                 params["ignore_patterns"] = ignore_patterns
 
+            if self.hf_endpoint:
+                self.logger.debug(f"Using following endpoint: {self.hf_endpoint}")
+                params["endpoint"] = self.hf_endpoint
+
             if self.hf_token:
                 self.logger.debug("Using token to authenticate")
                 params["token"] = self.hf_token
@@ -101,6 +109,11 @@ class HuggingfaceClient:
                 "local_dir": self.download_dir,
                 "etag_timeout": self.etag_timeout,
             }
+
+            if self.hf_endpoint:
+                self.logger.debug(f"Using following endpoint: {self.hf_endpoint}")
+                params["endpoint"] = self.hf_endpoint
+
             if self.hf_token:
                 self.logger.debug("Using token to authenticate")
                 params["token"] = self.hf_token
