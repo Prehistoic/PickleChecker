@@ -24,7 +24,7 @@ picklechecker = "picklechecker.cli:main"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-huggingface-hub = "^1.0.1"
+huggingface-hub = "^1.1.5"
 click = "^8.3.0"
 click-option-group = "^0.5.9"
 python-dotenv = "^1.2.1"
